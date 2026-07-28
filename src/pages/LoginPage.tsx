@@ -19,7 +19,16 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
+      const data = await login(email, password);
+
+      if (data.requires_org_selection && data.orgs) {
+        navigate("/select-org", {
+          replace: true,
+          state: { orgs: data.orgs },
+        });
+        return;
+      }
+
       const me = await getMe();
       setAuthenticated(true, me.role);
       if (me.role === "admin") navigate("/dashboard", { replace: true });

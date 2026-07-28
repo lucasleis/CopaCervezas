@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Role } from "@/api/auth";
 import LoginPage from "@/pages/LoginPage";
+import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
 
 function ProtectedRoute({
@@ -44,6 +45,7 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/select-org" element={<SelectOrgPage />} />
       <Route path="/" element={<RootRedirect />} />
       <Route
         path="/dashboard"
