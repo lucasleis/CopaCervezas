@@ -1,0 +1,121 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import type { ReactElement } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginPage from "@/pages/LoginPage";
+import AdminLayout from "@/components/AdminLayout";
+import TripsPage from "@/pages/TripsPage"
+import ConfiguracionPage from "@/pages/ConfiguracionPage";
+import TripDetailPage from "@/pages/TripDetailPage";
+import BookingsPage from "@/pages/BookingsPage";
+import BookingDetailPage from "@/pages/BookingDetailPage";
+import RefundsPage from "@/pages/RefundsPage";
+import ChargebacksPage from "@/pages/ChargebacksPage";
+
+function ProtectedRoute({ children }: { children: ReactElement }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center">Cargando...</div>;
+  }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+function RootRedirect() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return <div className="flex min-h-screen items-center justify-center">Cargando...</div>;
+  }
+  return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
+}
+
+export default function AppRouter() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/" element={<RootRedirect />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <div className="p-8 text-2xl font-semibold">Dashboard</div>
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/viajes"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <TripsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/viajes/:tripId"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <TripDetailPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reservas"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BookingsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reservas/:bookingId"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <BookingDetailPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reembolsos"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <RefundsPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contracargos"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <ChargebacksPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracion"
+        element={
+          <ProtectedRoute>
+            <AdminLayout>
+              <ConfiguracionPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
