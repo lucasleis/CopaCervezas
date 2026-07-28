@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { login } from "@/api/auth";
+import { login, getMe } from "@/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -20,8 +20,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      setAuthenticated(true);
-      navigate("/dashboard", { replace: true });
+      const me = await getMe();
+      setAuthenticated(true, me.role);
+      if (me.role === "admin") navigate("/dashboard", { replace: true });
+      else if (me.role === "judge") navigate("/cata", { replace: true });
+      else navigate("/mis-muestras", { replace: true });
     } catch {
       setError("Email o contraseña incorrectos.");
     } finally {
@@ -32,9 +35,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-100">
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-neutral-900">Expreso Río Paraná</h1>
-        <p className="mt-1 text-sm text-neutral-600">Panel de administración</p>
-
+        <h1 className="text-2xl font-semibold text-neutral-900">Nivalis</h1>
+        <p className="mt-1 text-sm text-neutral-600">Iniciá sesión para continuar</p>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium text-neutral-600">
@@ -48,7 +50,6 @@ export default function LoginPage() {
               required
             />
           </div>
-
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium text-neutral-600">
               Contraseña
@@ -61,12 +62,10 @@ export default function LoginPage() {
               required
             />
           </div>
-
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
-
-          {error && <p className="text-sm text-[#E87B7B]">{error}</p>}
+          {error && <p className="text-sm text-red-500">{error}</p>}
         </form>
       </div>
     </div>
