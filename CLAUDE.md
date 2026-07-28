@@ -10,7 +10,7 @@ The repo root contains:
 - Frontend files directly at root (`src/`, `package.json`, `vite.config.ts`, etc.) — NOT inside a `frontend/` folder
 - `backend/` — Go + Echo backend
 
-nivalis/
+copa_cervezas/
 ├── src/ ← React frontend (Vite + TypeScript + Tailwind v4 + shadcn/ui)
 │ ├── api/
 │ │ ├── client.ts ← axios instance, withCredentials, 401 interceptor
@@ -34,7 +34,7 @@ nivalis/
 │ │ └── queries/
 │ │ └── auth.sql ← 6 sqlc queries
 │ ├── sqlc.yaml
-│ ├── go.mod ← module: github.com/lucasleis/nivalis
+│ ├── go.mod ← module: github.com/lucasleis/copa_cervezas
 │ └── go.sum
 ├── package.json
 └── vite.config.ts
