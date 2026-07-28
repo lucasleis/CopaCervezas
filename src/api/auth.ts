@@ -1,4 +1,5 @@
 import apiClient from "./client";
+import { setAccessToken } from "./client";
 
 export type Role = "admin" | "judge" | "brewery";
 
@@ -18,11 +19,13 @@ export async function login(email: string, password: string): Promise<LoginRespo
     email,
     password,
   });
+  setAccessToken(response.data.access_token);
   return response.data;
 }
 
 export async function logout(): Promise<void> {
   await apiClient.post("/auth/logout");
+  setAccessToken(null);
 }
 
 export async function getMe(): Promise<MeResponse> {
