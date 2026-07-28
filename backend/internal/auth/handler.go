@@ -12,8 +12,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/lucasleis/nivalis/internal/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Handler struct {
@@ -28,6 +28,7 @@ type Claims struct {
 	UsuarioID string `json:"sub"`
 	OrgID     string `json:"org_id"`
 	Rol       string `json:"rol"`
+	Email     string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -78,7 +79,7 @@ func hashToken(raw string) string {
 	return hex.EncodeToString(h[:])
 }
 
-func (h *Handler) issueTokens(c echo.Context, usuarioID, orgID uuid.UUID, rol string) (*loginResponse, error) {
+func (h *Handler) issueTokens(c echo.Context, usuarioID, orgID uuid.UUID, rol string, email string) (*loginResponse, error) {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	jwtExpiry := os.Getenv("JWT_EXPIRY")
 	if jwtExpiry == "" {
@@ -102,6 +103,7 @@ func (h *Handler) issueTokens(c echo.Context, usuarioID, orgID uuid.UUID, rol st
 		UsuarioID: usuarioID.String(),
 		OrgID:     orgID.String(),
 		Rol:       rol,
+		Email:     email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessDuration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -172,7 +174,7 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 
 	if len(roles) == 1 {
-		res, err := h.issueTokens(c, usuario.ID, roles[0].OrgID, string(roles[0].Rol))
+		res, err := h.issueTokens(c, usuario.ID, roles[0].OrgID, string(roles[0].Rol), usuario.Email)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 		}
@@ -225,7 +227,7 @@ func (h *Handler) SelectOrg(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "sin acceso a esta organización")
 	}
 
-	res, err := h.issueTokens(c, usuarioID, orgID, matchedRol)
+	res, err := h.issueTokens(c, usuarioID, orgID, matchedRol, "")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
@@ -282,7 +284,7 @@ func (h *Handler) Refresh(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "sin rol para esta organización")
 	}
 
-	res, err := h.issueTokens(c, rt.UsuarioID, rt.OrgID, rol)
+	res, err := h.issueTokens(c, rt.UsuarioID, rt.OrgID, rol, "")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
