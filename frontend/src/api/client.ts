@@ -58,7 +58,9 @@ apiClient.interceptors.response.use(
     // If the refresh endpoint itself returned 401, clear token and redirect
     if (is401 && isRefreshEndpoint) {
       setAccessToken(null);
-      window.location.href = "/login";
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
       return Promise.reject(error);
     }
 
@@ -102,7 +104,9 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         setAccessToken(null);
-        window.location.href = "/login";
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
