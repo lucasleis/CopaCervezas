@@ -10,32 +10,44 @@ The repo root contains:
 - Frontend files directly at root (`src/`, `package.json`, `vite.config.ts`, etc.) — NOT inside a `frontend/` folder
 - `backend/` — Go + Echo backend
 
-copa_cervezas/
-├── src/ ← React frontend (Vite + TypeScript + Tailwind v4 + shadcn/ui)
+CopaCervezas/
+├── src/ ← React frontend
 │ ├── api/
-│ │ ├── client.ts ← axios instance, withCredentials, 401 interceptor
-│ │ └── auth.ts ← login(), logout(), getMe(), Role type
+│ │ ├── client.ts ← axios + auto-refresh + request queue
+│ │ ├── auth.ts ← login(), logout(), getMe(), selectOrg()
+│ │ └── ediciones.ts ← full edition API client
 │ ├── components/
-│ │ ├── ui/ ← shadcn/ui components (@base-ui/react)
+│ │ ├── ui/ ← shadcn/ui (@base-ui/react)
 │ │ ├── AdminLayout.tsx
 │ │ └── Sidebar.tsx
 │ ├── contexts/
-│ │ └── AuthContext.tsx ← isAuthenticated, role, loading, setAuthenticated, logout
+│ │ └── AuthContext.tsx ← isAuthenticated, role, loading
 │ ├── pages/
-│ │ └── LoginPage.tsx ← role-based redirect after login
-│ └── router.tsx ← ProtectedRoute (with requiredRole), RootRedirect
+│ │ ├── LoginPage.tsx ← role-based redirect after login
+│ │ └── SelectOrgPage.tsx ← multi-org selection screen
+│ └── router.tsx ← ProtectedRoute (requiredRole), RootRedirect
 ├── backend/
-│ ├── cmd/server/main.go ← Echo server, GET /health
+│ ├── cmd/server/main.go ← Echo server, CORS, all routes wired
 │ ├── internal/
-│ │ ├── auth/ ← auth handlers (not yet implemented)
-│ │ └── middleware/ ← JWT middleware (not yet implemented)
+│ │ ├── auth/
+│ │ │ └── handler.go ← Login, Me, Refresh, Logout, SelectOrg
+│ │ ├── middleware/
+│ │ │ └── jwt.go ← JWT middleware, injects usuario_id/org_id/rol/email
+│ │ └── db/ ← sqlc generated — DO NOT EDIT
 │ ├── db/
-│ │ ├── migrations/ ← 8 migration files (000001–000004, up+down)
-│ │ └── queries/
-│ │ └── auth.sql ← 6 sqlc queries
+│ │ ├── migrations/ ← 000001–000008 (auth + edition config)
+│ │ ├── queries/
+│ │ │ ├── auth.sql
+│ │ │ └── ediciones.sql
+│ │ └── seeds/
+│ │ ├── auth_seed.sql ← 3 users + 1 org
+│ │ └── edicion_seed.sql
 │ ├── sqlc.yaml
-│ ├── go.mod ← module: github.com/lucasleis/copa_cervezas
+│ ├── .env ← local only, gitignored
+│ ├── .env.example
+│ ├── go.mod
 │ └── go.sum
+├── CLAUDE.md
 ├── package.json
 └── vite.config.ts
 
@@ -48,29 +60,43 @@ copa_cervezas/
 |---|---|
 | Frontend | React + Vite + TypeScript + Tailwind v4 + shadcn/ui (@base-ui/react) + React Query |
 | Backend | Go + Echo v4 |
-| Database | PostgreSQL 15 |
+| Database | PostgreSQL (local: `copa_cervezas`) |
 | Query layer | sqlc |
 | Real-time | WebSockets (Echo) — for admin panel during tasting |
 | Auth | JWT (15min access token in module memory) + httpOnly cookie refresh token (8h) |
 
 ---
 
-## Auth system — current state
+## Auth system — COMPLETE ✅
+
+- Access token: stored in module memory only (never localStorage)
+- Refresh token: httpOnly cookie, stored hashed in DB, rotated on each refresh
+- Single login URL for all 3 roles → role-based redirect
+- CORS configured with `ALLOWED_ORIGIN` env var
+- Local seeds: admin@copa.com / judge@copa.com / brewery@copa.com (passwords: admin123 / judge123 / brewery123)
+- Org ID: `bbbbbbbb-0000-0000-0000-000000000001`
+
+**Backend endpoints:**
+- `POST /auth/login` — returns access token or org list for multi-org users
+- `GET /auth/me` — returns id, email, role (JWT required)
+- `POST /auth/refresh` — rotates refresh token, returns new access token
+- `POST /auth/logout` — revokes refresh token, clears cookie
+- `POST /auth/select-org` — issues tokens for selected org (JWT required)
+
+---
+
+## Edition config module — IN PROGRESS (LLE-7)
 
 **What exists:**
-- `src/api/client.ts` — axios instance with `withCredentials: true` and a basic 401 → redirect interceptor. Does NOT yet have auto-refresh logic.
-- `src/api/auth.ts` — `login()`, `logout()`, `getMe()`. Endpoints: `/auth/login`, `/auth/logout`, `/auth/me`. Returns `Role` type: `"admin" | "judge" | "brewery"`.
-- `src/contexts/AuthContext.tsx` — stores `isAuthenticated` and `role`. No token storage.
-- `backend/db/migrations/` — 4 migrations: organizaciones, usuarios, usuario_organizacion (with rol_enum), refresh_tokens.
-- `backend/db/queries/auth.sql` — 6 sqlc queries ready for `sqlc generate`.
-- `backend/cmd/server/main.go` — minimal Echo server with `GET /health`.
+- Migrations 000005–000008: ediciones, precios_inscripcion, lugares_entrega, codigos_descuento
+- `backend/db/queries/ediciones.sql` — 17 sqlc queries
+- `backend/db/seeds/edicion_seed.sql` — Copa Argentina 2027 seed
+- `src/api/ediciones.ts` — full TypeScript types and API functions
 
 **What does NOT exist yet:**
-- Auto-refresh logic in `client.ts` (access token in module memory, request queue)
-- Backend auth handlers (`/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/me`)
-- JWT middleware
-- sqlc generated code (`internal/db/`) — needs `sqlc generate` with DB running
-- Seed data
+- Backend CRUD handlers for ediciones
+- State machine endpoint `/ediciones/:id/estado`
+- Frontend pages: EdicionesPage, EdicionDetailPage
 
 ---
 
@@ -82,41 +108,26 @@ copa_cervezas/
 | `judge` | `/cata` | Assigned flights only |
 | `brewery` | `/mis-muestras` | Own samples and feedback only |
 
-A judge can simultaneously be a brewery participant. The system blocks them from evaluating their own samples.
+---
+
+## Next task (start of next session)
+
+Verify that login works end-to-end from the browser:
+1. Start backend: `cd backend && go run ./cmd/server`
+2. Start frontend: `npm run dev` (from repo root)
+3. Open http://localhost:5173 and login with admin@copa.com / admin123
+4. Verify redirect to /dashboard
 
 ---
 
-## Key business rules (relevant to current work)
+## Key business rules
 
-- Access token: 15 min, stored in **module memory only** (never localStorage, never sessionStorage)
-- Refresh token: 8 hours, httpOnly cookie, stored hashed in DB
-- Single login URL for all roles — role-based redirect after login
-- Admin can revoke sessions mid-competition (marks refresh token as revoked in DB)
-- Feedback is not visible to breweries until admin explicitly closes the edition
-- Anonymous codes are 4 numeric digits, generated randomly, unique per edition
-
----
-
-## Active ticket
-
-**LLE-5 — AUTH: Login de 0 a 100** (In Progress)
-
-Completed:
-- [x] Paso 1 — Monorepo structure (Go backend scaffolded)
-- [x] Paso 2 — DB migrations
-- [x] Paso 3 — sqlc config and queries
-
-Pending (require local PostgreSQL):
-- [ ] Paso 4 — POST /auth/login handler
-- [ ] Paso 5 — GET /auth/me + JWT middleware
-- [ ] Paso 6 — POST /auth/refresh
-- [ ] Paso 7 — POST /auth/logout
-- [ ] Paso 8 — Seed data
-
-Pending (can be done without DB):
-- [ ] Paso 9 — client.ts auto-refresh with request queue
-- [ ] Paso 10 — auth.ts: save access token in memory on login
-- [ ] Paso 11 — LoginPage: org selection flow for multi-org users
+- Access token: 15 min, module memory only
+- Refresh token: 8 hours, httpOnly cookie, hashed in DB
+- Admin can revoke sessions (marks refresh token revoked in DB)
+- Feedback not visible to breweries until admin closes the edition
+- Anonymous codes: 4 numeric digits, random, unique per edition
+- All DB queries filter by org_id from JWT — never from request params
 
 ---
 
@@ -125,5 +136,7 @@ Pending (can be done without DB):
 - Do NOT store tokens in localStorage or sessionStorage — ever
 - Do NOT auto-fix errors silently — report file name and line number, then stop
 - Do NOT add features beyond what is explicitly requested
-- Commit after each completed step with a descriptive message
-- All DB work requires local PostgreSQL — skip execution if DB is not available, create files only
+- Do NOT edit `backend/internal/db/` — it is sqlc generated
+- Commit after each completed step
+- DB work requires local PostgreSQL running (`sudo service postgresql start`)
+- Run `sqlc generate` from `backend/` after any migration changes
