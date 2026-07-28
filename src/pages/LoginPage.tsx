@@ -37,7 +37,6 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-sm">
         <h1 className="text-2xl font-semibold text-neutral-900">Nivalis</h1>
         <p className="mt-1 text-sm text-neutral-600">Iniciá sesión para continuar</p>
-
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-sm font-medium text-neutral-600">
@@ -51,7 +50,6 @@ export default function LoginPage() {
               required
             />
           </div>
-
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-sm font-medium text-neutral-600">
               Contraseña
@@ -64,11 +62,9 @@ export default function LoginPage() {
               required
             />
           </div>
-
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
-
           {error && <p className="text-sm text-red-500">{error}</p>}
         </form>
       </div>

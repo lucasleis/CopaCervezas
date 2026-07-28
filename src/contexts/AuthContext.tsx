@@ -1,9 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { getMe, logout as logoutApi } from "@/api/auth";
-import type { MeResponse } from "@/api/auth";
-
-type Role = "admin" | "judge" | "brewery";
+import type { Role, MeResponse } from "@/api/auth";
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -45,7 +43,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, role, loading, setAuthenticated, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, role, loading, setAuthenticated, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
