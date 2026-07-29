@@ -5,6 +5,7 @@ import type { Role } from "@/api/auth";
 import LoginPage from "@/pages/LoginPage";
 import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
+import EdicionesPage from "@/pages/admin/EdicionesPage";
 
 function ProtectedRoute({
   children,
@@ -73,6 +74,16 @@ export default function AppRouter() {
           <ProtectedRoute requiredRole="brewery">
             <AdminLayout>
               <div className="p-8 text-2xl font-semibold">Mis muestras</div>
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ediciones"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <EdicionesPage />
             </AdminLayout>
           </ProtectedRoute>
         }
