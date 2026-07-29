@@ -2,6 +2,8 @@ package competition
 
 import (
 	"database/sql"
+	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -9,6 +11,15 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/lucasleis/nivalis/internal/db"
 )
+
+type CambiarEstadoRequest struct {
+	Estado string `json:"estado"`
+}
+
+type estadoResponse struct {
+	ID     string `json:"id"`
+	Estado string `json:"estado"`
+}
 
 type Handler struct {
 	svc *Service
@@ -222,7 +233,7 @@ func parseUUID(c echo.Context, param string) (uuid.UUID, error) {
 }
 
 func isNotFound(err error) bool {
-	return err == sql.ErrNoRows
+	return errors.Is(err, sql.ErrNoRows)
 }
 
 // Ediciones
@@ -241,6 +252,7 @@ func (h *Handler) CreateEdicion(c echo.Context) error {
 	}
 	edicion, err := h.svc.CreateEdicion(c.Request().Context(), orgID, req)
 	if err != nil {
+		slog.Error("create edicion failed", "error", err)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear la edición")
 	}
 	return respond(c, http.StatusCreated, toEdicionResponse(edicion))
@@ -256,6 +268,7 @@ func (h *Handler) ListEdiciones(c echo.Context) error {
 	}
 	ediciones, err := h.svc.ListEdiciones(c.Request().Context(), orgID)
 	if err != nil {
+		slog.Error("list ediciones failed", "error", err)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar las ediciones")
 	}
 	result := make([]edicionResponse, len(ediciones))
@@ -282,6 +295,7 @@ func (h *Handler) GetEdicion(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("get edicion failed", "error", err, "id", id)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener la edición")
 	}
 	return respond(c, http.StatusOK, toEdicionResponse(edicion))
@@ -308,9 +322,49 @@ func (h *Handler) UpdateEdicion(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("update edicion failed", "error", err, "id", id)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar la edición")
 	}
 	return respond(c, http.StatusOK, toEdicionResponse(edicion))
+}
+
+func (h *Handler) CambiarEstado(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	id, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	var req CambiarEstadoRequest
+	if err := c.Bind(&req); err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
+	}
+	edicion, err := h.svc.CambiarEstado(c.Request().Context(), id, orgID, req.Estado)
+	if err != nil {
+		var transicionErr *TransicionInvalidaError
+		if errors.As(err, &transicionErr) {
+			return fail(c, http.StatusUnprocessableEntity, "TRANSICION_INVALIDA",
+				"No se puede pasar de '"+transicionErr.Desde+"' a '"+transicionErr.Hacia+"'")
+		}
+		var precondicionErr *PrecondicionNoCumplidaError
+		if errors.As(err, &precondicionErr) {
+			return fail(c, http.StatusUnprocessableEntity, "PRECONDICION_NO_CUMPLIDA", precondicionErr.Message)
+		}
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("cambiar estado failed", "error", err, "id", id)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al cambiar el estado de la edición")
+	}
+	return respond(c, http.StatusOK, estadoResponse{
+		ID:     edicion.ID.String(),
+		Estado: string(edicion.Estado),
+	})
 }
 
 // Precios
@@ -336,9 +390,37 @@ func (h *Handler) CreatePrecio(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("create precio failed", "error", err, "edicion_id", edicionID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear el precio")
 	}
 	return respond(c, http.StatusCreated, toPrecioResponse(precio))
+}
+
+func (h *Handler) ListPrecios(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	precios, err := h.svc.ListPrecios(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("list precios failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar los precios")
+	}
+	result := make([]precioResponse, len(precios))
+	for i, p := range precios {
+		result[i] = toPrecioResponse(p)
+	}
+	return respond(c, http.StatusOK, result)
 }
 
 func (h *Handler) UpdatePrecio(c echo.Context) error {
@@ -366,6 +448,7 @@ func (h *Handler) UpdatePrecio(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "PRECIO_NOT_FOUND", "El precio solicitado no existe")
 		}
+		slog.Error("update precio failed", "error", err, "precio_id", precioID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar el precio")
 	}
 	return respond(c, http.StatusOK, toPrecioResponse(precio))
@@ -391,6 +474,7 @@ func (h *Handler) DeletePrecio(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("delete precio failed", "error", err, "precio_id", precioID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al eliminar el precio")
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -419,9 +503,37 @@ func (h *Handler) CreateLugar(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("create lugar failed", "error", err, "edicion_id", edicionID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear el lugar")
 	}
 	return respond(c, http.StatusCreated, toLugarResponse(lugar))
+}
+
+func (h *Handler) ListLugares(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	lugares, err := h.svc.ListLugares(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("list lugares failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar los lugares de entrega")
+	}
+	result := make([]lugarResponse, len(lugares))
+	for i, l := range lugares {
+		result[i] = toLugarResponse(l)
+	}
+	return respond(c, http.StatusOK, result)
 }
 
 func (h *Handler) UpdateLugar(c echo.Context) error {
@@ -449,6 +561,7 @@ func (h *Handler) UpdateLugar(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "LUGAR_NOT_FOUND", "El lugar solicitado no existe")
 		}
+		slog.Error("update lugar failed", "error", err, "lugar_id", lugarID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar el lugar")
 	}
 	return respond(c, http.StatusOK, toLugarResponse(lugar))
@@ -474,6 +587,7 @@ func (h *Handler) DeleteLugar(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("delete lugar failed", "error", err, "lugar_id", lugarID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al eliminar el lugar")
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -502,9 +616,37 @@ func (h *Handler) CreateDescuento(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("create descuento failed", "error", err, "edicion_id", edicionID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear el código de descuento")
 	}
 	return respond(c, http.StatusCreated, toDescuentoResponse(descuento))
+}
+
+func (h *Handler) ListDescuentos(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	descuentos, err := h.svc.ListDescuentos(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("list descuentos failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar los códigos de descuento")
+	}
+	result := make([]descuentoResponse, len(descuentos))
+	for i, d := range descuentos {
+		result[i] = toDescuentoResponse(d)
+	}
+	return respond(c, http.StatusOK, result)
 }
 
 func (h *Handler) UpdateDescuento(c echo.Context) error {
@@ -532,6 +674,7 @@ func (h *Handler) UpdateDescuento(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "DESCUENTO_NOT_FOUND", "El código de descuento solicitado no existe")
 		}
+		slog.Error("update descuento failed", "error", err, "descuento_id", descuentoID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar el código de descuento")
 	}
 	return respond(c, http.StatusOK, toDescuentoResponse(descuento))
@@ -557,6 +700,7 @@ func (h *Handler) DeleteDescuento(c echo.Context) error {
 		if isNotFound(err) {
 			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
+		slog.Error("delete descuento failed", "error", err, "descuento_id", descuentoID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al eliminar el código de descuento")
 	}
 	return c.NoContent(http.StatusNoContent)

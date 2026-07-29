@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -18,19 +18,22 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using environment variables")
+		slog.Info("No .env file found, using environment variables")
 	}
 
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		log.Fatal("DATABASE_URL is required")
+		slog.Error("DATABASE_URL is required")
+		os.Exit(1)
 	}
 	sqlDB, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		log.Fatalf("failed to open DB: %v", err)
+		slog.Error("failed to open DB", "error", err)
+		os.Exit(1)
 	}
 	if err := sqlDB.Ping(); err != nil {
-		log.Fatalf("failed to ping DB: %v", err)
+		slog.Error("failed to ping DB", "error", err)
+		os.Exit(1)
 	}
 	queries := db.New(sqlDB)
 
@@ -68,16 +71,20 @@ func main() {
 	admin.GET("/ediciones", competitionHandler.ListEdiciones)
 	admin.GET("/ediciones/:id", competitionHandler.GetEdicion)
 	admin.PUT("/ediciones/:id", competitionHandler.UpdateEdicion)
+	admin.PATCH("/ediciones/:id/estado", competitionHandler.CambiarEstado)
 
 	admin.POST("/ediciones/:id/precios", competitionHandler.CreatePrecio)
+	admin.GET("/ediciones/:id/precios", competitionHandler.ListPrecios)
 	admin.PUT("/ediciones/:id/precios/:precio_id", competitionHandler.UpdatePrecio)
 	admin.DELETE("/ediciones/:id/precios/:precio_id", competitionHandler.DeletePrecio)
 
 	admin.POST("/ediciones/:id/lugares", competitionHandler.CreateLugar)
+	admin.GET("/ediciones/:id/lugares", competitionHandler.ListLugares)
 	admin.PUT("/ediciones/:id/lugares/:lugar_id", competitionHandler.UpdateLugar)
 	admin.DELETE("/ediciones/:id/lugares/:lugar_id", competitionHandler.DeleteLugar)
 
 	admin.POST("/ediciones/:id/descuentos", competitionHandler.CreateDescuento)
+	admin.GET("/ediciones/:id/descuentos", competitionHandler.ListDescuentos)
 	admin.PUT("/ediciones/:id/descuentos/:descuento_id", competitionHandler.UpdateDescuento)
 	admin.DELETE("/ediciones/:id/descuentos/:descuento_id", competitionHandler.DeleteDescuento)
 
@@ -85,6 +92,6 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Starting server on port %s", port)
+	slog.Info("Starting server", "port", port)
 	e.Logger.Fatal(e.Start(":" + port))
 }
