@@ -19,7 +19,7 @@ func NewService(queries *db.Queries) *Service {
 }
 
 func (s *Service) CreateEdicion(ctx context.Context, orgID uuid.UUID, req CreateEdicionRequest) (db.Edicione, error) {
-	return s.queries.CreateEdicion(ctx, db.CreateEdicionParams{
+	result, err := s.queries.CreateEdicion(ctx, db.CreateEdicionParams{
 		OrgID:                    orgID,
 		Nombre:                   req.Nombre,
 		Anio:                     req.Anio,
@@ -28,18 +28,30 @@ func (s *Service) CreateEdicion(ctx context.Context, orgID uuid.UUID, req Create
 		FechaEvento:              toNullTime(req.FechaEvento),
 		MaxMuestrasPorCerveceria: req.MaxMuestrasPorCerveceria,
 	})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: create edicion: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) ListEdiciones(ctx context.Context, orgID uuid.UUID) ([]db.Edicione, error) {
-	return s.queries.ListEdicionesByOrg(ctx, orgID)
+	result, err := s.queries.ListEdicionesByOrg(ctx, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("competition: list ediciones: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) GetEdicion(ctx context.Context, id, orgID uuid.UUID) (db.Edicione, error) {
-	return s.queries.GetEdicionByIDAndOrg(ctx, db.GetEdicionByIDAndOrgParams{ID: id, OrgID: orgID})
+	result, err := s.queries.GetEdicionByIDAndOrg(ctx, db.GetEdicionByIDAndOrgParams{ID: id, OrgID: orgID})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: get edicion: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) UpdateEdicion(ctx context.Context, id, orgID uuid.UUID, req UpdateEdicionRequest) (db.Edicione, error) {
-	return s.queries.UpdateEdicion(ctx, db.UpdateEdicionParams{
+	result, err := s.queries.UpdateEdicion(ctx, db.UpdateEdicionParams{
 		ID:                       id,
 		OrgID:                    orgID,
 		Nombre:                   req.Nombre,
@@ -49,54 +61,80 @@ func (s *Service) UpdateEdicion(ctx context.Context, id, orgID uuid.UUID, req Up
 		FechaEvento:              toNullTime(req.FechaEvento),
 		MaxMuestrasPorCerveceria: req.MaxMuestrasPorCerveceria,
 	})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: update edicion: %w", err)
+	}
+	return result, nil
 }
 
 // Precios
 
 func (s *Service) CreatePrecio(ctx context.Context, edicionID, orgID uuid.UUID, req CreatePrecioRequest) (db.PreciosInscripcion, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.PreciosInscripcion{}, err
+		return db.PreciosInscripcion{}, fmt.Errorf("competition: create precio: %w", err)
 	}
-	return s.queries.CreatePrecioInscripcion(ctx, db.CreatePrecioInscripcionParams{
+	result, err := s.queries.CreatePrecioInscripcion(ctx, db.CreatePrecioInscripcionParams{
 		EdicionID:  edicionID,
 		Nombre:     req.Nombre,
-		Precio:     fmt.Sprintf("%g", req.Precio),
+		Precio:     fmt.Sprintf("%.2f", req.Precio),
 		FechaDesde: toNullTime(req.FechaDesde),
 		FechaHasta: toNullTime(req.FechaHasta),
 	})
+	if err != nil {
+		return db.PreciosInscripcion{}, fmt.Errorf("competition: create precio: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) ListPrecios(ctx context.Context, edicionID, orgID uuid.UUID) ([]db.PreciosInscripcion, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list precios: %w", err)
+	}
+	result, err := s.queries.ListPreciosByEdicion(ctx, edicionID)
+	if err != nil {
+		return nil, fmt.Errorf("competition: list precios: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) UpdatePrecio(ctx context.Context, precioID, edicionID, orgID uuid.UUID, req UpdatePrecioRequest) (db.PreciosInscripcion, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.PreciosInscripcion{}, err
+		return db.PreciosInscripcion{}, fmt.Errorf("competition: update precio: %w", err)
 	}
-	return s.queries.UpdatePrecioInscripcion(ctx, db.UpdatePrecioInscripcionParams{
+	result, err := s.queries.UpdatePrecioInscripcion(ctx, db.UpdatePrecioInscripcionParams{
 		ID:         precioID,
 		EdicionID:  edicionID,
 		Nombre:     req.Nombre,
-		Precio:     fmt.Sprintf("%g", req.Precio),
+		Precio:     fmt.Sprintf("%.2f", req.Precio),
 		FechaDesde: toNullTime(req.FechaDesde),
 		FechaHasta: toNullTime(req.FechaHasta),
 	})
+	if err != nil {
+		return db.PreciosInscripcion{}, fmt.Errorf("competition: update precio: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) DeletePrecio(ctx context.Context, precioID, edicionID, orgID uuid.UUID) error {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return err
+		return fmt.Errorf("competition: delete precio: %w", err)
 	}
-	return s.queries.DeletePrecioInscripcion(ctx, db.DeletePrecioInscripcionParams{
+	if err := s.queries.DeletePrecioInscripcion(ctx, db.DeletePrecioInscripcionParams{
 		ID:        precioID,
 		EdicionID: edicionID,
-	})
+	}); err != nil {
+		return fmt.Errorf("competition: delete precio: %w", err)
+	}
+	return nil
 }
 
 // Lugares
 
 func (s *Service) CreateLugar(ctx context.Context, edicionID, orgID uuid.UUID, req CreateLugarRequest) (db.LugaresEntrega, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.LugaresEntrega{}, err
+		return db.LugaresEntrega{}, fmt.Errorf("competition: create lugar: %w", err)
 	}
-	return s.queries.CreateLugarEntrega(ctx, db.CreateLugarEntregaParams{
+	result, err := s.queries.CreateLugarEntrega(ctx, db.CreateLugarEntregaParams{
 		EdicionID: edicionID,
 		Nombre:    req.Nombre,
 		Direccion: req.Direccion,
@@ -104,13 +142,28 @@ func (s *Service) CreateLugar(ctx context.Context, edicionID, orgID uuid.UUID, r
 		Provincia: req.Provincia,
 		Horarios:  toNullString(req.Horarios),
 	})
+	if err != nil {
+		return db.LugaresEntrega{}, fmt.Errorf("competition: create lugar: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) ListLugares(ctx context.Context, edicionID, orgID uuid.UUID) ([]db.LugaresEntrega, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list lugares: %w", err)
+	}
+	result, err := s.queries.ListLugaresByEdicion(ctx, edicionID)
+	if err != nil {
+		return nil, fmt.Errorf("competition: list lugares: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) UpdateLugar(ctx context.Context, lugarID, edicionID, orgID uuid.UUID, req UpdateLugarRequest) (db.LugaresEntrega, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.LugaresEntrega{}, err
+		return db.LugaresEntrega{}, fmt.Errorf("competition: update lugar: %w", err)
 	}
-	return s.queries.UpdateLugarEntrega(ctx, db.UpdateLugarEntregaParams{
+	result, err := s.queries.UpdateLugarEntrega(ctx, db.UpdateLugarEntregaParams{
 		ID:        lugarID,
 		EdicionID: edicionID,
 		Nombre:    req.Nombre,
@@ -119,54 +172,83 @@ func (s *Service) UpdateLugar(ctx context.Context, lugarID, edicionID, orgID uui
 		Provincia: req.Provincia,
 		Horarios:  toNullString(req.Horarios),
 	})
+	if err != nil {
+		return db.LugaresEntrega{}, fmt.Errorf("competition: update lugar: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) DeleteLugar(ctx context.Context, lugarID, edicionID, orgID uuid.UUID) error {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return err
+		return fmt.Errorf("competition: delete lugar: %w", err)
 	}
-	return s.queries.DeleteLugarEntrega(ctx, db.DeleteLugarEntregaParams{
+	if err := s.queries.DeleteLugarEntrega(ctx, db.DeleteLugarEntregaParams{
 		ID:        lugarID,
 		EdicionID: edicionID,
-	})
+	}); err != nil {
+		return fmt.Errorf("competition: delete lugar: %w", err)
+	}
+	return nil
 }
 
 // Descuentos
 
 func (s *Service) CreateDescuento(ctx context.Context, edicionID, orgID uuid.UUID, req CreateDescuentoRequest) (db.CodigosDescuento, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.CodigosDescuento{}, err
+		return db.CodigosDescuento{}, fmt.Errorf("competition: create descuento: %w", err)
 	}
-	return s.queries.CreateCodigoDescuento(ctx, db.CreateCodigoDescuentoParams{
+	result, err := s.queries.CreateCodigoDescuento(ctx, db.CreateCodigoDescuentoParams{
 		EdicionID:           edicionID,
 		Codigo:              req.Codigo,
-		DescuentoPorcentaje: fmt.Sprintf("%g", req.DescuentoPorcentaje),
+		DescuentoPorcentaje: fmt.Sprintf("%.2f", req.DescuentoPorcentaje),
 		MaxUsos:             toNullInt32(req.MaxUsos),
 	})
+	if err != nil {
+		return db.CodigosDescuento{}, fmt.Errorf("competition: create descuento: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) ListDescuentos(ctx context.Context, edicionID, orgID uuid.UUID) ([]db.CodigosDescuento, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list descuentos: %w", err)
+	}
+	result, err := s.queries.ListDescuentosByEdicion(ctx, edicionID)
+	if err != nil {
+		return nil, fmt.Errorf("competition: list descuentos: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) UpdateDescuento(ctx context.Context, descuentoID, edicionID, orgID uuid.UUID, req UpdateDescuentoRequest) (db.CodigosDescuento, error) {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return db.CodigosDescuento{}, err
+		return db.CodigosDescuento{}, fmt.Errorf("competition: update descuento: %w", err)
 	}
-	return s.queries.UpdateCodigoDescuento(ctx, db.UpdateCodigoDescuentoParams{
+	result, err := s.queries.UpdateCodigoDescuento(ctx, db.UpdateCodigoDescuentoParams{
 		ID:                  descuentoID,
 		EdicionID:           edicionID,
 		Codigo:              req.Codigo,
-		DescuentoPorcentaje: fmt.Sprintf("%g", req.DescuentoPorcentaje),
+		DescuentoPorcentaje: fmt.Sprintf("%.2f", req.DescuentoPorcentaje),
 		MaxUsos:             toNullInt32(req.MaxUsos),
 		Activo:              req.Activo,
 	})
+	if err != nil {
+		return db.CodigosDescuento{}, fmt.Errorf("competition: update descuento: %w", err)
+	}
+	return result, nil
 }
 
 func (s *Service) DeleteDescuento(ctx context.Context, descuentoID, edicionID, orgID uuid.UUID) error {
 	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
-		return err
+		return fmt.Errorf("competition: delete descuento: %w", err)
 	}
-	return s.queries.DeleteCodigoDescuento(ctx, db.DeleteCodigoDescuentoParams{
+	if err := s.queries.DeleteCodigoDescuento(ctx, db.DeleteCodigoDescuentoParams{
 		ID:        descuentoID,
 		EdicionID: edicionID,
-	})
+	}); err != nil {
+		return fmt.Errorf("competition: delete descuento: %w", err)
+	}
+	return nil
 }
 
 func (s *Service) verifyEdicionOwnership(ctx context.Context, edicionID, orgID uuid.UUID) error {
@@ -174,7 +256,10 @@ func (s *Service) verifyEdicionOwnership(ctx context.Context, edicionID, orgID u
 		ID:    edicionID,
 		OrgID: orgID,
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("competition: verify edicion ownership: %w", err)
+	}
+	return nil
 }
 
 func toNullTime(t *time.Time) sql.NullTime {
