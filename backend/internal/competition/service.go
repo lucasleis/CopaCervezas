@@ -271,7 +271,7 @@ func (s *Service) DeleteDescuento(ctx context.Context, descuentoID, edicionID, o
 }
 
 // CambiarEstado ejecuta la máquina de estados de la edición.
-// Solo maneja las transiciones: config→inscripcion e inscripcion→recepcion.
+// Solo maneja las transiciones: config→inscripcion e inscripcion→pre-cata.
 func (s *Service) CambiarEstado(ctx context.Context, id, orgID uuid.UUID, estadoSolicitado string) (db.Edicione, error) {
 	edicion, err := s.queries.GetEdicionByIDAndOrg(ctx, db.GetEdicionByIDAndOrgParams{ID: id, OrgID: orgID})
 	if err != nil {
@@ -306,9 +306,9 @@ func (s *Service) validarTransicion(edicion db.Edicione, hacia string) (db.Estad
 		}
 		return db.EstadoEdicionEnumInscripcion, nil
 
-	case desde == "inscripcion" && hacia == "recepcion":
+	case desde == "inscripcion" && hacia == "pre-cata":
 		// TODO: verificar muestras cuando exista el módulo de inscripción
-		return db.EstadoEdicionEnumRecepcion, nil
+		return db.EstadoEdicionEnumPreCata, nil
 
 	default:
 		return "", &TransicionInvalidaError{Desde: desde, Hacia: hacia}
