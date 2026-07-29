@@ -6,7 +6,8 @@
       "Bash(go build *)",
       "Bash(git commit *)",
       "Bash(git add *)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Artifact"
     ]
   }
 }

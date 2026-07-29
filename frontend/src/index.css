@@ -1,1 +1,77 @@
 @import "tailwindcss";
+
+@theme {
+  /* Primary — "Hielo" */
+  --color-primary-50: #eff8fc;
+  --color-primary-100: #dceef7;
+  --color-primary-200: #b9ddef;
+  --color-primary-300: #8cc7e3;
+  --color-primary-400: #57a8d1;
+  --color-primary-500: #2f8abd;
+  --color-primary-600: #1f6d9b;
+  --color-primary-700: #1b567c;
+  --color-primary-800: #1a4763;
+  --color-primary-900: #183c53;
+
+  /* Neutral */
+  --color-neutral-50: #f7f9fb;
+  --color-neutral-100: #eef2f6;
+  --color-neutral-200: #dde4ea;
+  --color-neutral-300: #c3ceda;
+  --color-neutral-400: #99a9bb;
+  --color-neutral-500: #728299;
+  --color-neutral-600: #56657a;
+  --color-neutral-700: #414d5e;
+  --color-neutral-800: #2c3542;
+  --color-neutral-900: #1b212b;
+
+  /* Success */
+  --color-success-50: #f1faf3;
+  --color-success-100: #dcf3e2;
+  --color-success-500: #2f9457;
+  --color-success-700: #1e6137;
+
+  /* Warning */
+  --color-warning-50: #fdf8ec;
+  --color-warning-100: #faedc8;
+  --color-warning-500: #d1841a;
+  --color-warning-700: #894f16;
+
+  /* Danger */
+  --color-danger-50: #fdf3f2;
+  --color-danger-100: #fbe1de;
+  --color-danger-500: #d1402c;
+  --color-danger-600: #b02d1d;
+  --color-danger-700: #8f2419;
+
+  /* Info */
+  --color-info-50: #eefbfa;
+  --color-info-100: #d3f4f0;
+  --color-info-500: #2b9288;
+  --color-info-700: #1f5d59;
+}
+
+/* Semánticos — variables CSS nativas, no @theme */
+:root {
+  --color-bg: var(--color-neutral-50);
+  --color-surface: #ffffff;
+  --color-border: var(--color-neutral-200);
+  --color-text-primary: var(--color-neutral-900);
+  --color-text-secondary: var(--color-neutral-500);
+  --color-text-muted: var(--color-neutral-400);
+
+  /* Tokens que shadcn/ui necesita — mapeados al design system de Nivalis */
+  --background: var(--color-neutral-50);
+  --foreground: var(--color-neutral-900);
+  --primary: var(--color-primary-500);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-neutral-100);
+  --secondary-foreground: var(--color-neutral-700);
+  --muted: var(--color-neutral-100);
+  --muted-foreground: var(--color-neutral-500);
+  --border: var(--color-neutral-200);
+  --input: var(--color-neutral-200);
+  --ring: var(--color-primary-400);
+  --destructive: var(--color-danger-500);
+  --radius: 0.5rem;
+}
