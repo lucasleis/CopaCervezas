@@ -10,6 +10,25 @@ import (
 	"github.com/lucasleis/nivalis/internal/db"
 )
 
+// TransicionInvalidaError se retorna cuando el estado solicitado no es alcanzable desde el estado actual.
+type TransicionInvalidaError struct {
+	Desde string
+	Hacia string
+}
+
+func (e *TransicionInvalidaError) Error() string {
+	return fmt.Sprintf("no se puede pasar de '%s' a '%s'", e.Desde, e.Hacia)
+}
+
+// PrecondicionNoCumplidaError se retorna cuando la transición es válida pero la edición no cumple los requisitos.
+type PrecondicionNoCumplidaError struct {
+	Message string
+}
+
+func (e *PrecondicionNoCumplidaError) Error() string {
+	return e.Message
+}
+
 type Service struct {
 	queries *db.Queries
 }
@@ -249,6 +268,51 @@ func (s *Service) DeleteDescuento(ctx context.Context, descuentoID, edicionID, o
 		return fmt.Errorf("competition: delete descuento: %w", err)
 	}
 	return nil
+}
+
+// CambiarEstado ejecuta la máquina de estados de la edición.
+// Solo maneja las transiciones: config→inscripcion e inscripcion→recepcion.
+func (s *Service) CambiarEstado(ctx context.Context, id, orgID uuid.UUID, estadoSolicitado string) (db.Edicione, error) {
+	edicion, err := s.queries.GetEdicionByIDAndOrg(ctx, db.GetEdicionByIDAndOrgParams{ID: id, OrgID: orgID})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: cambiar estado: %w", err)
+	}
+
+	nuevoEstado, err := s.validarTransicion(edicion, estadoSolicitado)
+	if err != nil {
+		return db.Edicione{}, err
+	}
+
+	result, err := s.queries.UpdateEdicionEstado(ctx, db.UpdateEdicionEstadoParams{
+		ID:     id,
+		OrgID:  orgID,
+		Estado: nuevoEstado,
+	})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: cambiar estado: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) validarTransicion(edicion db.Edicione, hacia string) (db.EstadoEdicionEnum, error) {
+	desde := string(edicion.Estado)
+
+	switch {
+	case desde == "config" && hacia == "inscripcion":
+		if edicion.Nombre == "" || (!edicion.FechaInicioInscripcion.Valid && !edicion.FechaEvento.Valid) {
+			return "", &PrecondicionNoCumplidaError{
+				Message: "La edición debe tener nombre y al menos una fecha para abrir la inscripción",
+			}
+		}
+		return db.EstadoEdicionEnumInscripcion, nil
+
+	case desde == "inscripcion" && hacia == "recepcion":
+		// TODO: verificar muestras cuando exista el módulo de inscripción
+		return db.EstadoEdicionEnumRecepcion, nil
+
+	default:
+		return "", &TransicionInvalidaError{Desde: desde, Hacia: hacia}
+	}
 }
 
 func (s *Service) verifyEdicionOwnership(ctx context.Context, edicionID, orgID uuid.UUID) error {

@@ -12,6 +12,15 @@ import (
 	"github.com/lucasleis/nivalis/internal/db"
 )
 
+type CambiarEstadoRequest struct {
+	Estado string `json:"estado"`
+}
+
+type estadoResponse struct {
+	ID     string `json:"id"`
+	Estado string `json:"estado"`
+}
+
 type Handler struct {
 	svc *Service
 }
@@ -317,6 +326,45 @@ func (h *Handler) UpdateEdicion(c echo.Context) error {
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar la edición")
 	}
 	return respond(c, http.StatusOK, toEdicionResponse(edicion))
+}
+
+func (h *Handler) CambiarEstado(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	id, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	var req CambiarEstadoRequest
+	if err := c.Bind(&req); err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
+	}
+	edicion, err := h.svc.CambiarEstado(c.Request().Context(), id, orgID, req.Estado)
+	if err != nil {
+		var transicionErr *TransicionInvalidaError
+		if errors.As(err, &transicionErr) {
+			return fail(c, http.StatusUnprocessableEntity, "TRANSICION_INVALIDA",
+				"No se puede pasar de '"+transicionErr.Desde+"' a '"+transicionErr.Hacia+"'")
+		}
+		var precondicionErr *PrecondicionNoCumplidaError
+		if errors.As(err, &precondicionErr) {
+			return fail(c, http.StatusUnprocessableEntity, "PRECONDICION_NO_CUMPLIDA", precondicionErr.Message)
+		}
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("cambiar estado failed", "error", err, "id", id)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al cambiar el estado de la edición")
+	}
+	return respond(c, http.StatusOK, estadoResponse{
+		ID:     edicion.ID.String(),
+		Estado: string(edicion.Estado),
+	})
 }
 
 // Precios

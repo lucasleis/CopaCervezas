@@ -71,6 +71,7 @@ func main() {
 	admin.GET("/ediciones", competitionHandler.ListEdiciones)
 	admin.GET("/ediciones/:id", competitionHandler.GetEdicion)
 	admin.PUT("/ediciones/:id", competitionHandler.UpdateEdicion)
+	admin.PATCH("/ediciones/:id/estado", competitionHandler.CambiarEstado)
 
 	admin.POST("/ediciones/:id/precios", competitionHandler.CreatePrecio)
 	admin.GET("/ediciones/:id/precios", competitionHandler.ListPrecios)

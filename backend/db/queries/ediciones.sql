@@ -116,3 +116,11 @@ RETURNING *;
 -- name: DeleteCodigoDescuento :exec
 DELETE FROM codigos_descuento
 WHERE id = $1 AND edicion_id = $2;
+
+-- name: UpdateEdicionEstado :one
+UPDATE ediciones
+SET
+    estado = $3,
+    updated_at = NOW()
+WHERE id = $1 AND org_id = $2
+RETURNING *;
