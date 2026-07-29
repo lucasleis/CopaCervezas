@@ -11,6 +11,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
 	"github.com/lucasleis/nivalis/internal/auth"
+	"github.com/lucasleis/nivalis/internal/competition"
 	"github.com/lucasleis/nivalis/internal/db"
 	custommiddleware "github.com/lucasleis/nivalis/internal/middleware"
 )
@@ -47,6 +48,8 @@ func main() {
 	}))
 
 	authHandler := auth.NewHandler(queries)
+	competitionSvc := competition.NewService(queries)
+	competitionHandler := competition.NewHandler(competitionSvc)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
@@ -59,6 +62,24 @@ func main() {
 	protected.Use(custommiddleware.JWTMiddleware)
 	protected.GET("/auth/me", authHandler.Me)
 	protected.POST("/auth/select-org", authHandler.SelectOrg)
+
+	admin := protected.Group("/api/v1/admin")
+	admin.POST("/ediciones", competitionHandler.CreateEdicion)
+	admin.GET("/ediciones", competitionHandler.ListEdiciones)
+	admin.GET("/ediciones/:id", competitionHandler.GetEdicion)
+	admin.PUT("/ediciones/:id", competitionHandler.UpdateEdicion)
+
+	admin.POST("/ediciones/:id/precios", competitionHandler.CreatePrecio)
+	admin.PUT("/ediciones/:id/precios/:precio_id", competitionHandler.UpdatePrecio)
+	admin.DELETE("/ediciones/:id/precios/:precio_id", competitionHandler.DeletePrecio)
+
+	admin.POST("/ediciones/:id/lugares", competitionHandler.CreateLugar)
+	admin.PUT("/ediciones/:id/lugares/:lugar_id", competitionHandler.UpdateLugar)
+	admin.DELETE("/ediciones/:id/lugares/:lugar_id", competitionHandler.DeleteLugar)
+
+	admin.POST("/ediciones/:id/descuentos", competitionHandler.CreateDescuento)
+	admin.PUT("/ediciones/:id/descuentos/:descuento_id", competitionHandler.UpdateDescuento)
+	admin.DELETE("/ediciones/:id/descuentos/:descuento_id", competitionHandler.DeleteDescuento)
 
 	port := os.Getenv("PORT")
 	if port == "" {
