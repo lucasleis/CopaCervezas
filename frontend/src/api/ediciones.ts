@@ -133,6 +133,22 @@ export async function updateEdicion(
   return response.data.data;
 }
 
+export interface CambiarEstadoResponse {
+  id: string;
+  estado: EstadoEdicion;
+}
+
+export async function cambiarEstado(
+  id: string,
+  estado: EstadoEdicion
+): Promise<CambiarEstadoResponse> {
+  const response = await apiClient.patch<ApiResponse<CambiarEstadoResponse>>(
+    `/api/v1/admin/ediciones/${id}/estado`,
+    { estado }
+  );
+  return response.data.data;
+}
+
 // Precios
 
 export async function listPrecios(edicionId: string): Promise<Precio[]> {

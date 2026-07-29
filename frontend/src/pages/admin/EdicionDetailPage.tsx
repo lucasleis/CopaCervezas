@@ -29,29 +29,11 @@ import {
   updateDescuento,
   deleteDescuento,
   type Edicion,
-  type EstadoEdicion,
   type Precio,
   type Lugar,
   type Descuento,
 } from "@/api/ediciones";
-
-const ESTADO_CONFIG: Record<EstadoEdicion, { label: string; className: string }> = {
-  config: { label: "Configuración", className: "bg-neutral-100 text-neutral-600" },
-  inscripcion: { label: "Inscripción", className: "bg-blue-100 text-blue-700" },
-  "pre-cata": { label: "Pre-cata", className: "bg-yellow-100 text-yellow-700" },
-  cata: { label: "Cata", className: "bg-orange-100 text-orange-700" },
-  devolucion: { label: "Devolución", className: "bg-purple-100 text-purple-700" },
-  cerrada: { label: "Cerrada", className: "bg-green-100 text-green-700" },
-};
-
-function EstadoBadge({ estado }: { estado: EstadoEdicion }) {
-  const config = ESTADO_CONFIG[estado] ?? { label: estado, className: "bg-neutral-100 text-neutral-600" };
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide whitespace-nowrap ${config.className}`}>
-      {config.label}
-    </span>
-  );
-}
+import EstadoEdicion from "@/components/EstadoEdicion";
 
 function formatFecha(iso: string | null): string {
   if (!iso) return "—";
@@ -681,7 +663,7 @@ export default function EdicionDetailPage() {
         </Button>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold text-neutral-900">{edicion.nombre}</h1>
-          <EstadoBadge estado={edicion.estado} />
+          <EstadoEdicion edicion={edicion} />
         </div>
       </div>
 
