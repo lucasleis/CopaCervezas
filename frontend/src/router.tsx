@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage";
 import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
 import EdicionesPage from "@/pages/admin/EdicionesPage";
+import EdicionDetailPage from "@/pages/admin/EdicionDetailPage";
 
 function ProtectedRoute({
   children,
@@ -84,6 +85,16 @@ export default function AppRouter() {
           <ProtectedRoute requiredRole="admin">
             <AdminLayout>
               <EdicionesPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ediciones/:id"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <EdicionDetailPage />
             </AdminLayout>
           </ProtectedRoute>
         }
