@@ -13,6 +13,7 @@ import VueloPanelPage from "@/pages/juez/VueloPanelPage";
 import MisMuestrasPage from "@/pages/brewery/MisMuestrasPage";
 import EstilosPage from "@/pages/admin/EstilosPage";
 import InscriptosPage from "@/pages/admin/InscriptosPage";
+import GruposPage from "@/pages/admin/GruposPage";
 
 function ProtectedRoute({
   children,
@@ -153,6 +154,16 @@ export default function AppRouter() {
           <ProtectedRoute requiredRole="admin">
             <AdminLayout>
               <InscriptosPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ediciones/:id/grupos"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <GruposPage />
             </AdminLayout>
           </ProtectedRoute>
         }

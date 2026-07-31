@@ -671,6 +671,25 @@ export default function EdicionDetailPage() {
       <PreciosSection edicionId={edicion.id} />
       <LugaresSection edicionId={edicion.id} />
       <DescuentosSection edicionId={edicion.id} />
+
+      {["pre-cata", "cata", "devolucion", "cerrada"].includes(edicion.estado) && (
+        <section className="rounded-lg border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Agrupación de muestras</h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Agrupá los estilos en grupos de premiación antes de la jornada de cata.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
+            >
+              Gestionar grupos →
+            </Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

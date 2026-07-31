@@ -147,7 +147,25 @@
       "Bash(gofmt -l internal/competition/service.go)",
       "Bash(pkill -9 -f \"go run ./cmd/server\")",
       "Bash(pkill -9 -f \"/tmp/go-build.*/exe/server\")",
-      "Bash(kill -9 12450)"
+      "Bash(kill -9 12450)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(npm ls *)",
+      "Bash(NODE_PATH=/home/lleis/.npm/_npx/e41f203b7505f1fb/node_modules node e2e_grupos.mjs)",
+      "Bash(ln -s /home/lleis/.npm/_npx/e41f203b7505f1fb/node_modules node_modules)",
+      "Bash(node e2e_grupos.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(ldconfig -p)",
+      "Bash(dpkg -l)",
+      "Bash(sudo -n apt-get install -y libasound2t64 libasound2)",
+      "Bash(find / -xdev -iname \"libasound.so*\")",
+      "Bash(find / -iname \"libasound.so*\")",
+      "Bash(apt-cache policy *)",
+      "Bash(mkdir -p /tmp/claude-1000/-mnt-c-Users-lucas-Codigos-CopaCervezas/46087d16-ea75-4e63-a9f2-8516b5080cb0/scratchpad/localdeps)",
+      "Bash(dpkg-deb -x /var/cache/apt/archives/libasound2t64_1.2.11-1ubuntu0.2_amd64.deb .)",
+      "Bash(dpkg-deb -x /var/cache/apt/archives/libasound2-data_1.2.11-1ubuntu0.2_all.deb .)",
+      "Bash(ps -o lstart= -p 3292)",
+      "Bash(kill -9 3291 3292)",
+      "Bash(pkill -9 -f \"node.*vite\")"
     ]
   }
 }
