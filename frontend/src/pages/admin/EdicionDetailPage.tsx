@@ -50,6 +50,15 @@ function isoToDateInput(iso: string | null): string {
   return iso.slice(0, 10);
 }
 
+// ─── Layout compartido ────────────────────────────────────────────────────────
+// Todas las secciones usan el mismo grid de 4 columnas:
+// [nombre/código 30%] [col2 20%] [col3 20%] [col4 15%] [acciones 15%]
+// Esto garantiza que "Acciones" siempre quede en la misma posición horizontal.
+
+const ROW_GRID = "grid grid-cols-[30%_20%_20%_15%_15%] items-center";
+const HEADER_CELL = "px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-700 border-b border-neutral-200";
+const DATA_CELL = "px-4 py-3 text-sm";
+
 // ─── Sección 1: Datos generales ───────────────────────────────────────────────
 
 function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
@@ -207,41 +216,41 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
         <h2 className="text-base font-semibold text-neutral-900">Precios de inscripción</h2>
         <Button size="sm" onClick={openCreate}>Agregar precio</Button>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 font-medium text-neutral-600">Nombre</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Precio</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Válido desde</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Válido hasta</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading && [1, 2].map((i) => (
-            <tr key={i} className="border-b border-neutral-100">
-              {[1, 2, 3, 4, 5].map((j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>)}
-            </tr>
-          ))}
-          {!isLoading && precios?.length === 0 && (
-            <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-neutral-500">No hay precios configurados.</td></tr>
-          )}
-          {!isLoading && precios?.map((p) => (
-            <tr key={p.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-3 font-medium text-neutral-900">{p.nombre}</td>
-              <td className="px-4 py-3 text-neutral-600">${p.precio}</td>
-              <td className="px-4 py-3 text-neutral-600">{formatFecha(p.fecha_desde)}</td>
-              <td className="px-4 py-3 text-neutral-600">{formatFecha(p.fecha_hasta)}</td>
-              <td className="px-4 py-3">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {/* Header */}
+      <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+        <span className={HEADER_CELL}>Nombre</span>
+        <span className={HEADER_CELL}>Precio</span>
+        <span className={HEADER_CELL}>Válido desde</span>
+        <span className={HEADER_CELL}>Válido hasta</span>
+        <span className={HEADER_CELL}>Acciones</span>
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-neutral-100">
+        {isLoading && [1, 2].map((i) => (
+          <div key={i} className={ROW_GRID}>
+            {[1, 2, 3, 4, 5].map((j) => (
+              <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+            ))}
+          </div>
+        ))}
+        {!isLoading && precios?.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay precios configurados.</div>
+        )}
+        {!isLoading && precios?.map((p) => (
+          <div key={p.id} className={ROW_GRID}>
+            <span className={`${DATA_CELL} font-medium text-neutral-900`}>{p.nombre}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>${p.precio}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_desde)}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_hasta)}</span>
+            <div className={`${DATA_CELL} flex gap-2`}>
+              <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
+              <Button variant="outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
@@ -368,41 +377,41 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
         <h2 className="text-base font-semibold text-neutral-900">Lugares de entrega</h2>
         <Button size="sm" onClick={openCreate}>Agregar lugar</Button>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 font-medium text-neutral-600">Nombre</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Dirección</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Ciudad</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Provincia</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading && [1, 2].map((i) => (
-            <tr key={i} className="border-b border-neutral-100">
-              {[1, 2, 3, 4, 5].map((j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>)}
-            </tr>
-          ))}
-          {!isLoading && lugares?.length === 0 && (
-            <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-neutral-500">No hay lugares configurados.</td></tr>
-          )}
-          {!isLoading && lugares?.map((l) => (
-            <tr key={l.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-3 font-medium text-neutral-900">{l.nombre}</td>
-              <td className="px-4 py-3 text-neutral-600">{l.direccion}</td>
-              <td className="px-4 py-3 text-neutral-600">{l.ciudad}</td>
-              <td className="px-4 py-3 text-neutral-600">{l.provincia}</td>
-              <td className="px-4 py-3">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {/* Header */}
+      <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+        <span className={HEADER_CELL}>Nombre</span>
+        <span className={HEADER_CELL}>Dirección</span>
+        <span className={HEADER_CELL}>Ciudad</span>
+        <span className={HEADER_CELL}>Provincia</span>
+        <span className={HEADER_CELL}>Acciones</span>
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-neutral-100">
+        {isLoading && [1, 2].map((i) => (
+          <div key={i} className={ROW_GRID}>
+            {[1, 2, 3, 4, 5].map((j) => (
+              <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+            ))}
+          </div>
+        ))}
+        {!isLoading && lugares?.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay lugares configurados.</div>
+        )}
+        {!isLoading && lugares?.map((l) => (
+          <div key={l.id} className={ROW_GRID}>
+            <span className={`${DATA_CELL} font-medium text-neutral-900`}>{l.nombre}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{l.direccion}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{l.ciudad}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{l.provincia}</span>
+            <div className={`${DATA_CELL} flex gap-2`}>
+              <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
+              <Button variant="outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
@@ -535,47 +544,47 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
         <h2 className="text-base font-semibold text-neutral-900">Códigos de descuento</h2>
         <Button size="sm" onClick={openCreate}>Agregar código</Button>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-            <th className="px-4 py-3 font-medium text-neutral-600">Código</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Descuento</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Usos</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Estado</th>
-            <th className="px-4 py-3 font-medium text-neutral-600">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading && [1, 2].map((i) => (
-            <tr key={i} className="border-b border-neutral-100">
-              {[1, 2, 3, 4, 5].map((j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>)}
-            </tr>
-          ))}
-          {!isLoading && descuentos?.length === 0 && (
-            <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-neutral-500">No hay códigos de descuento.</td></tr>
-          )}
-          {!isLoading && descuentos?.map((d) => (
-            <tr key={d.id} className="border-b border-neutral-100 last:border-0">
-              <td className="px-4 py-3 font-mono font-medium text-neutral-900">{d.codigo}</td>
-              <td className="px-4 py-3 text-neutral-600">{d.descuento_porcentaje}%</td>
-              <td className="px-4 py-3 text-neutral-600">
-                {d.usos_actuales}{d.max_usos !== null ? ` / ${d.max_usos}` : ""}
-              </td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${d.activo ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
-                  {d.activo ? "Activo" : "Inactivo"}
-                </span>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      {/* Header */}
+      <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+        <span className={HEADER_CELL}>Código</span>
+        <span className={HEADER_CELL}>Descuento</span>
+        <span className={HEADER_CELL}>Usos</span>
+        <span className={HEADER_CELL}>Estado</span>
+        <span className={HEADER_CELL}>Acciones</span>
+      </div>
+
+      {/* Rows */}
+      <div className="divide-y divide-neutral-100">
+        {isLoading && [1, 2].map((i) => (
+          <div key={i} className={ROW_GRID}>
+            {[1, 2, 3, 4, 5].map((j) => (
+              <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+            ))}
+          </div>
+        ))}
+        {!isLoading && descuentos?.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay códigos de descuento.</div>
+        )}
+        {!isLoading && descuentos?.map((d) => (
+          <div key={d.id} className={ROW_GRID}>
+            <span className={`${DATA_CELL} font-mono font-medium text-neutral-900`}>{d.codigo}</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>{d.descuento_porcentaje}%</span>
+            <span className={`${DATA_CELL} text-neutral-600`}>
+              {d.usos_actuales}{d.max_usos !== null ? ` / ${d.max_usos}` : ""}
+            </span>
+            <div className={DATA_CELL}>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${d.activo ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
+                {d.activo ? "Activo" : "Inactivo"}
+              </span>
+            </div>
+            <div className={`${DATA_CELL} flex gap-2`}>
+              <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
+              <Button variant="outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
