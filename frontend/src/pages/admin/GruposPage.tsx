@@ -265,6 +265,7 @@ function GrupoCard({
           <Button
             variant="outline"
             size="sm"
+            className="text-red-600"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
           >
@@ -389,7 +390,7 @@ function AutoagruparDialog({
     },
     onError: (error) => {
       if (errorCode(error) === "TODAS_MUESTRAS_ASIGNADAS") {
-        toast.error("Todas las muestras ya tienen grupo asignado.");
+        toast.success("Todas las muestras ya tienen grupo asignado.");
       } else {
         toast.error("Error al autoasignar grupos.");
       }
@@ -549,7 +550,7 @@ export default function GruposPage() {
               <h2 className="text-sm font-semibold text-neutral-900">Grupos</h2>
               {!bloqueado && (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setAutoagruparOpen(true)}>
+                  <Button variant="default" size="sm" onClick={() => setAutoagruparOpen(true)}>
                     Auto-agrupar
                   </Button>
                   <Button size="sm" onClick={() => setNuevoGrupoOpen(true)}>

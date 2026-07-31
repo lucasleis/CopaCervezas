@@ -49,18 +49,23 @@
   --color-info-100: #d3f4f0;
   --color-info-500: #2b9288;
   --color-info-700: #1f5d59;
+
+  --color-background: var(--color-neutral-50);
+  --color-foreground: var(--color-neutral-900);
+  --color-primary: var(--color-primary-500);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-neutral-100);
+  --color-secondary-foreground: var(--color-neutral-700);
+  --color-muted: var(--color-neutral-100);
+  --color-muted-foreground: var(--color-neutral-500);
+  --color-border: var(--color-neutral-200);
+  --color-input: var(--color-neutral-200);
+  --color-ring: var(--color-primary-400);
+  --color-destructive: var(--color-danger-500);
 }
 
-/* Semánticos — variables CSS nativas, no @theme */
+/* Mantener :root solo para los tokens que shadcn necesita como CSS vars nativas */
 :root {
-  --color-bg: var(--color-neutral-50);
-  --color-surface: #ffffff;
-  --color-border: var(--color-neutral-200);
-  --color-text-primary: var(--color-neutral-900);
-  --color-text-secondary: var(--color-neutral-500);
-  --color-text-muted: var(--color-neutral-400);
-
-  /* Tokens que shadcn/ui necesita — mapeados al design system de Nivalis */
   --background: var(--color-neutral-50);
   --foreground: var(--color-neutral-900);
   --primary: var(--color-primary-500);
@@ -74,4 +79,17 @@
   --ring: var(--color-primary-400);
   --destructive: var(--color-danger-500);
   --radius: 0.5rem;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+a {
+  cursor: pointer;
+}
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+select:not(:disabled) {
+  cursor: pointer;
 }

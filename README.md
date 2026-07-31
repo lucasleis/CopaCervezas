@@ -240,3 +240,8 @@ npm run build
 - Todas las queries filtran por `org_id` extraído del JWT — nunca del request body o query params.
 - `backend/internal/db/` es código generado por sqlc. **No editar manualmente** — siempre correr `sqlc generate` después de modificar los `.sql`.
 - El frontend está en `frontend/` (no en la raíz del monorepo).
+
+
+
+to kill procces in port X
+fuser -k 5173/tcp

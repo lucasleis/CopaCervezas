@@ -682,7 +682,7 @@ export default function EdicionDetailPage() {
               </p>
             </div>
             <Button
-              variant="outline"
+              variant="default"
               onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
             >
               Gestionar grupos →

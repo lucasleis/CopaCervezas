@@ -44,7 +44,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-neutral-100">
       <div className="w-full max-w-sm rounded-lg bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-neutral-900">Nivalis</h1>
+        <h1 className="text-2xl font-semibold text-neutral-900">Copa de Cervezas</h1>
         <p className="mt-1 text-sm text-neutral-600">Iniciá sesión para continuar</p>
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
@@ -71,7 +71,7 @@ export default function LoginPage() {
               required
             />
           </div>
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" variant="default" disabled={loading} className="w-full">
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
           {error && <p className="text-sm text-red-500">{error}</p>}

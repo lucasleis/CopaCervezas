@@ -165,7 +165,10 @@
       "Bash(dpkg-deb -x /var/cache/apt/archives/libasound2-data_1.2.11-1ubuntu0.2_all.deb .)",
       "Bash(ps -o lstart= -p 3292)",
       "Bash(kill -9 3291 3292)",
-      "Bash(pkill -9 -f \"node.*vite\")"
+      "Bash(pkill -9 -f \"node.*vite\")",
+      "Bash(lsof -ti:5173,5174)",
+      "Bash(xargs -r kill)",
+      "Bash(fuser -k 5173/tcp)"
     ]
   }
 }
