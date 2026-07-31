@@ -13,7 +13,11 @@ import (
 	"github.com/lucasleis/nivalis/internal/auth"
 	"github.com/lucasleis/nivalis/internal/competition"
 	"github.com/lucasleis/nivalis/internal/db"
+	"github.com/lucasleis/nivalis/internal/inscription"
 	custommiddleware "github.com/lucasleis/nivalis/internal/middleware"
+	"github.com/lucasleis/nivalis/internal/styles"
+	"github.com/lucasleis/nivalis/internal/tasting"
+	"github.com/lucasleis/nivalis/pkg/websocket"
 )
 
 func main() {
@@ -53,6 +57,14 @@ func main() {
 	authHandler := auth.NewHandler(queries)
 	competitionSvc := competition.NewService(queries)
 	competitionHandler := competition.NewHandler(competitionSvc)
+	tastingSvc := tasting.NewService(queries)
+	hub := websocket.NewHub()
+	go hub.Run()
+	tastingHandler := tasting.NewHandler(tastingSvc, hub)
+	stylesSvc := styles.NewService(queries)
+	stylesHandler := styles.NewHandler(stylesSvc)
+	inscriptionSvc := inscription.NewService(queries)
+	inscriptionHandler := inscription.NewHandler(inscriptionSvc)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
@@ -65,6 +77,7 @@ func main() {
 	protected.Use(custommiddleware.JWTMiddleware)
 	protected.GET("/auth/me", authHandler.Me)
 	protected.POST("/auth/select-org", authHandler.SelectOrg)
+	protected.GET("/api/v1/estilos/catalogo", stylesHandler.ListCatalogoAuthenticated)
 
 	admin := protected.Group("/api/v1/admin")
 	admin.POST("/ediciones", competitionHandler.CreateEdicion)
@@ -87,6 +100,35 @@ func main() {
 	admin.GET("/ediciones/:id/descuentos", competitionHandler.ListDescuentos)
 	admin.PUT("/ediciones/:id/descuentos/:descuento_id", competitionHandler.UpdateDescuento)
 	admin.DELETE("/ediciones/:id/descuentos/:descuento_id", competitionHandler.DeleteDescuento)
+
+	admin.GET("/ediciones/:id/cata/progreso", tastingHandler.GetProgresoVuelosEdicion)
+	admin.GET("/ediciones/:id/cata/incongruencias", tastingHandler.GetIncongruenciasVuelo)
+	admin.PATCH("/ediciones/:id/evaluaciones/:evaluacion_id", tastingHandler.UpdateEvaluacionAdmin)
+	admin.GET("/ediciones/:id/cata/live", tastingHandler.LiveCata)
+
+	admin.GET("/estilos", stylesHandler.List)
+	admin.GET("/estilos/catalogo", stylesHandler.ListCatalogo)
+	admin.POST("/estilos", stylesHandler.Create)
+	admin.PATCH("/estilos/:id", stylesHandler.Update)
+	admin.PUT("/estilos/:id/campos", stylesHandler.UpdateCampos)
+
+	admin.GET("/ediciones/:id/inscripcion/muestras", inscriptionHandler.AdminListMuestras)
+	admin.PATCH("/ediciones/:id/muestras/:muestra_id/aprobar", inscriptionHandler.AprobarMuestra)
+	admin.PATCH("/cervecerias/:id/estado-pago", inscriptionHandler.UpdateEstadoPago)
+
+	cerveceria := protected.Group("/api/v1/cerveceria")
+	cerveceria.GET("/ediciones", inscriptionHandler.GetEdicionesActivas)
+	cerveceria.GET("/ediciones/:id/muestras", inscriptionHandler.ListMuestras)
+	cerveceria.POST("/ediciones/:id/muestras", inscriptionHandler.CreateMuestra)
+	cerveceria.PATCH("/ediciones/:id/muestras/:muestra_id", inscriptionHandler.UpdateMuestra)
+	cerveceria.DELETE("/ediciones/:id/muestras/:muestra_id", inscriptionHandler.DeleteMuestra)
+
+	juez := protected.Group("/api/v1/juez")
+	juez.GET("/ediciones", tastingHandler.GetEdicionesActivasJuez)
+	juez.GET("/ediciones/:edicion_id/vuelos", tastingHandler.GetVuelosJuez)
+	juez.GET("/ediciones/:edicion_id/vuelos/:vuelo_id/muestras", tastingHandler.GetMuestrasVuelo)
+	juez.POST("/ediciones/:edicion_id/evaluaciones", tastingHandler.CreateEvaluacion)
+	juez.GET("/ediciones/:edicion_id/evaluaciones", tastingHandler.GetEvaluacionesJuez)
 
 	port := os.Getenv("PORT")
 	if port == "" {

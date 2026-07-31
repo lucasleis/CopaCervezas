@@ -7,6 +7,12 @@ import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
 import EdicionesPage from "@/pages/admin/EdicionesPage";
 import EdicionDetailPage from "@/pages/admin/EdicionDetailPage";
+import CataLivePage from "@/pages/admin/CataLivePage";
+import CataPage from "@/pages/juez/CataPage";
+import VueloPanelPage from "@/pages/juez/VueloPanelPage";
+import MisMuestrasPage from "@/pages/brewery/MisMuestrasPage";
+import EstilosPage from "@/pages/admin/EstilosPage";
+import InscriptosPage from "@/pages/admin/InscriptosPage";
 
 function ProtectedRoute({
   children,
@@ -26,6 +32,24 @@ function ProtectedRoute({
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (requiredRole && role !== requiredRole) return <Navigate to="/login" replace />;
   return children;
+}
+
+function NotFound() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Cargando...
+      </div>
+    );
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-2 text-neutral-600">
+      <h1 className="text-3xl font-semibold text-neutral-900">404</h1>
+      <p className="text-sm">La página que buscás no existe.</p>
+    </div>
+  );
 }
 
 function RootRedirect() {
@@ -63,9 +87,15 @@ export default function AppRouter() {
         path="/cata"
         element={
           <ProtectedRoute requiredRole="judge">
-            <AdminLayout>
-              <div className="p-8 text-2xl font-semibold">Cata</div>
-            </AdminLayout>
+            <CataPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cata/:vuelo_id"
+        element={
+          <ProtectedRoute requiredRole="judge">
+            <VueloPanelPage />
           </ProtectedRoute>
         }
       />
@@ -73,9 +103,7 @@ export default function AppRouter() {
         path="/mis-muestras"
         element={
           <ProtectedRoute requiredRole="brewery">
-            <AdminLayout>
-              <div className="p-8 text-2xl font-semibold">Mis muestras</div>
-            </AdminLayout>
+            <MisMuestrasPage />
           </ProtectedRoute>
         }
       />
@@ -99,7 +127,37 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route
+        path="/admin/cata/:edicion_id"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <CataLivePage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/estilos"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <EstilosPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/ediciones/:id/inscripcion"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <InscriptosPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

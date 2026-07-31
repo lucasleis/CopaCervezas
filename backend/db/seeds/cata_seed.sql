@@ -10,6 +10,9 @@
 --   brewery:    cccccccc-0000-0000-0000-000000000003 (brewery@copa.com)
 -- =============================================================================
 
+-- La edición debe estar en estado 'cata' para que el módulo de cata tenga
+-- sentido (endpoints de juez/admin de cata filtran por estado in ('cata', 'pre-cata')).
+UPDATE ediciones SET estado = 'cata' WHERE id = 'dddddddd-0000-0000-0000-000000000001';
 
 -- =============================================================================
 -- JUECES ADICIONALES

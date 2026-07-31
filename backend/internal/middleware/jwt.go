@@ -14,11 +14,18 @@ import (
 func JWTMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		authHeader := c.Request().Header.Get("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+
+		var tokenStr string
+		switch {
+		case strings.HasPrefix(authHeader, "Bearer "):
+			tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
+		case authHeader == "" && c.QueryParam("token") != "":
+			// El navegador no permite headers custom al abrir un WebSocket,
+			// así que el WS handler acepta el token como query param.
+			tokenStr = c.QueryParam("token")
+		default:
 			return echo.NewHTTPError(http.StatusUnauthorized, "token requerido")
 		}
-
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		jwtSecret := os.Getenv("JWT_SECRET")
 
 		token, err := jwt.ParseWithClaims(tokenStr, &authpkg.Claims{}, func(t *jwt.Token) (interface{}, error) {
