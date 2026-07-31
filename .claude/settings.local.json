@@ -168,7 +168,8 @@
       "Bash(pkill -9 -f \"node.*vite\")",
       "Bash(lsof -ti:5173,5174)",
       "Bash(xargs -r kill)",
-      "Bash(fuser -k 5173/tcp)"
+      "Bash(fuser -k 5173/tcp)",
+      "Bash(grep *)"
     ]
   }
 }

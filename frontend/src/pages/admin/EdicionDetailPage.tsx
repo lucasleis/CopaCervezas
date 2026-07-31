@@ -124,7 +124,7 @@ function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
         </div>
         {formError && <p className="text-sm text-red-500">{formError}</p>}
         <div className="flex justify-end">
-          <Button type="submit" disabled={mutation.isPending}>
+          <Button type="submit" disabled={mutation.isPending} className="w-[140px]">
             {mutation.isPending ? "Guardando..." : "Guardar cambios"}
           </Button>
         </div>
@@ -212,9 +212,8 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
+      <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Precios de inscripción</h2>
-        <Button size="sm" onClick={openCreate}>Agregar precio</Button>
       </div>
 
       {/* Header */}
@@ -250,6 +249,13 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={`${ROW_GRID} border-t border-neutral-100`}>
+        <span className="col-span-4" />
+        <div className="px-4 py-3">
+          <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar precio</Button>
+        </div>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
@@ -373,9 +379,8 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
+      <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Lugares de entrega</h2>
-        <Button size="sm" onClick={openCreate}>Agregar lugar</Button>
       </div>
 
       {/* Header */}
@@ -411,6 +416,13 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={`${ROW_GRID} border-t border-neutral-100`}>
+        <span className="col-span-4" />
+        <div className="px-4 py-3">
+          <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar lugar</Button>
+        </div>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
@@ -540,9 +552,8 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
+      <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Códigos de descuento</h2>
-        <Button size="sm" onClick={openCreate}>Agregar código</Button>
       </div>
 
       {/* Header */}
@@ -584,6 +595,13 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={`${ROW_GRID} border-t border-neutral-100`}>
+        <span className="col-span-4" />
+        <div className="px-4 py-3">
+          <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar código</Button>
+        </div>
       </div>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
@@ -693,6 +711,7 @@ export default function EdicionDetailPage() {
             <Button
               variant="default"
               onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
+              className="w-[140px]"
             >
               Gestionar grupos →
             </Button>
