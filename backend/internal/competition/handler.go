@@ -705,3 +705,368 @@ func (h *Handler) DeleteDescuento(c echo.Context) error {
 	}
 	return c.NoContent(http.StatusNoContent)
 }
+
+// Grupos
+
+type grupoRequest struct {
+	Nombre    string  `json:"nombre"`
+	BosFlight *string `json:"bos_flight"`
+}
+
+type moverMuestraRequest struct {
+	GrupoID string `json:"grupo_id"`
+}
+
+type grupoResponse struct {
+	ID           string    `json:"id"`
+	EdicionID    string    `json:"edicion_id"`
+	Nombre       string    `json:"nombre"`
+	CantRondas   int32     `json:"cant_rondas"`
+	Orden        int32     `json:"orden"`
+	BosFlight    *string   `json:"bos_flight"`
+	CantMuestras int64     `json:"cant_muestras"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type muestraSinGrupoResponse struct {
+	ID              string  `json:"id"`
+	NombreComercial string  `json:"nombre_comercial"`
+	CodParticipante *string `json:"cod_participante"`
+	EstiloID        string  `json:"estilo_id"`
+	EstiloCodigo    string  `json:"estilo_codigo"`
+	EstiloNombre    string  `json:"estilo_nombre"`
+}
+
+type muestraGrupoResponse struct {
+	ID               string  `json:"id"`
+	NombreComercial  string  `json:"nombre_comercial"`
+	CodParticipante  *string `json:"cod_participante"`
+	CodAnonimo       *string `json:"cod_anonimo"`
+	AsignacionManual bool    `json:"asignacion_manual"`
+	EstiloID         string  `json:"estilo_id"`
+	EstiloCodigo     string  `json:"estilo_codigo"`
+	EstiloNombre     string  `json:"estilo_nombre"`
+}
+
+type autoasignarResponse struct {
+	GruposCreados     int `json:"grupos_creados"`
+	MuestrasAsignadas int `json:"muestras_asignadas"`
+}
+
+func toGrupoResponseFromList(g db.ListGruposEdicionRow, edicionID uuid.UUID) grupoResponse {
+	r := grupoResponse{
+		ID:           g.ID.String(),
+		EdicionID:    edicionID.String(),
+		Nombre:       g.Nombre,
+		CantRondas:   g.CantRondas,
+		Orden:        g.Orden,
+		CantMuestras: g.CantMuestras,
+		CreatedAt:    g.CreatedAt,
+		UpdatedAt:    g.UpdatedAt,
+	}
+	if g.BosFlight.Valid {
+		r.BosFlight = &g.BosFlight.String
+	}
+	return r
+}
+
+func toGrupoResponse(g db.Grupo, cantMuestras int64) grupoResponse {
+	r := grupoResponse{
+		ID:           g.ID.String(),
+		EdicionID:    g.EdicionID.String(),
+		Nombre:       g.Nombre,
+		CantRondas:   g.CantRondas,
+		Orden:        g.Orden,
+		CantMuestras: cantMuestras,
+		CreatedAt:    g.CreatedAt,
+		UpdatedAt:    g.UpdatedAt,
+	}
+	if g.BosFlight.Valid {
+		r.BosFlight = &g.BosFlight.String
+	}
+	return r
+}
+
+func toMuestraSinGrupoResponse(m db.ListMuestrasSinGrupoRow) muestraSinGrupoResponse {
+	r := muestraSinGrupoResponse{
+		ID:              m.ID.String(),
+		NombreComercial: m.NombreComercial,
+		EstiloID:        m.EstiloID.String(),
+		EstiloCodigo:    m.EstiloCodigo,
+		EstiloNombre:    m.EstiloNombre,
+	}
+	if m.CodParticipante.Valid {
+		r.CodParticipante = &m.CodParticipante.String
+	}
+	return r
+}
+
+func toMuestraGrupoResponse(m db.ListMuestrasByGrupoRow) muestraGrupoResponse {
+	r := muestraGrupoResponse{
+		ID:               m.ID.String(),
+		NombreComercial:  m.NombreComercial,
+		AsignacionManual: m.AsignacionManual,
+		EstiloID:         m.EstiloID.String(),
+		EstiloCodigo:     m.EstiloCodigo,
+		EstiloNombre:     m.EstiloNombre,
+	}
+	if m.CodParticipante.Valid {
+		r.CodParticipante = &m.CodParticipante.String
+	}
+	if m.CodAnonimo.Valid {
+		r.CodAnonimo = &m.CodAnonimo.String
+	}
+	return r
+}
+
+// failGrupoError mapea los errores tipados del servicio de grupos a su respuesta HTTP.
+// Devuelve handled=false si err no es uno de los tipos conocidos, en cuyo caso el
+// caller no debe usar resp (fail/c.JSON devuelven nil en éxito, no un sentinel).
+func failGrupoError(c echo.Context, err error) (handled bool, resp error) {
+	var transicionErr *TransicionInvalidaError
+	if errors.As(err, &transicionErr) {
+		return true, fail(c, http.StatusUnprocessableEntity, "TRANSICION_INVALIDA",
+			"La edición debe estar en estado 'pre-cata' para operar sobre grupos")
+	}
+	var grupoConMuestrasErr GrupoConMuestrasError
+	if errors.As(err, &grupoConMuestrasErr) {
+		return true, fail(c, http.StatusConflict, "GRUPO_CON_MUESTRAS", grupoConMuestrasErr.Error())
+	}
+	var todasAsignadasErr TodasAsignadasError
+	if errors.As(err, &todasAsignadasErr) {
+		return true, fail(c, http.StatusConflict, "TODAS_MUESTRAS_ASIGNADAS", todasAsignadasErr.Error())
+	}
+	if isNotFound(err) {
+		return true, fail(c, http.StatusNotFound, "NOT_FOUND", "El recurso solicitado no existe")
+	}
+	return false, nil
+}
+
+func (h *Handler) ListGrupos(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	grupos, err := h.svc.ListGrupos(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("list grupos failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar los grupos")
+	}
+	result := make([]grupoResponse, len(grupos))
+	for i, g := range grupos {
+		result[i] = toGrupoResponseFromList(g, edicionID)
+	}
+	return respond(c, http.StatusOK, result)
+}
+
+func (h *Handler) CreateGrupo(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	var req grupoRequest
+	if err := c.Bind(&req); err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
+	}
+	grupo, err := h.svc.CreateGrupo(c.Request().Context(), edicionID, orgID, req.Nombre, req.BosFlight)
+	if err != nil {
+		if handled, resp := failGrupoError(c, err); handled {
+			return resp
+		}
+		slog.Error("create grupo failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear el grupo")
+	}
+	return respond(c, http.StatusCreated, toGrupoResponse(grupo, 0))
+}
+
+func (h *Handler) UpdateGrupo(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	grupoID, err := parseUUID(c, "grupo_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de grupo inválido")
+	}
+	var req grupoRequest
+	if err := c.Bind(&req); err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
+	}
+	grupo, err := h.svc.UpdateGrupo(c.Request().Context(), grupoID, edicionID, orgID, req.Nombre, req.BosFlight)
+	if err != nil {
+		if handled, resp := failGrupoError(c, err); handled {
+			return resp
+		}
+		slog.Error("update grupo failed", "error", err, "grupo_id", grupoID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al actualizar el grupo")
+	}
+	return respond(c, http.StatusOK, toGrupoResponse(grupo, 0))
+}
+
+func (h *Handler) DeleteGrupo(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	grupoID, err := parseUUID(c, "grupo_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de grupo inválido")
+	}
+	if err := h.svc.DeleteGrupo(c.Request().Context(), grupoID, edicionID, orgID); err != nil {
+		if handled, resp := failGrupoError(c, err); handled {
+			return resp
+		}
+		slog.Error("delete grupo failed", "error", err, "grupo_id", grupoID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al eliminar el grupo")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) AutoasignarGrupos(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	gruposCreados, muestrasAsignadas, err := h.svc.AutoasignarGrupos(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if handled, resp := failGrupoError(c, err); handled {
+			return resp
+		}
+		slog.Error("autoasignar grupos failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al autoasignar los grupos")
+	}
+	return respond(c, http.StatusOK, autoasignarResponse{
+		GruposCreados:     gruposCreados,
+		MuestrasAsignadas: muestrasAsignadas,
+	})
+}
+
+func (h *Handler) MoverMuestra(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	muestraID, err := parseUUID(c, "muestra_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de muestra inválido")
+	}
+	var req moverMuestraRequest
+	if err := c.Bind(&req); err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
+	}
+	grupoID, err := uuid.Parse(req.GrupoID)
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de grupo inválido")
+	}
+	if err := h.svc.MoverMuestra(c.Request().Context(), muestraID, grupoID, edicionID, orgID); err != nil {
+		if handled, resp := failGrupoError(c, err); handled {
+			return resp
+		}
+		slog.Error("mover muestra failed", "error", err, "muestra_id", muestraID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al mover la muestra")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *Handler) ListMuestrasSinGrupo(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	muestras, err := h.svc.ListMuestrasSinGrupo(c.Request().Context(), edicionID, orgID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("list muestras sin grupo failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar las muestras sin grupo")
+	}
+	result := make([]muestraSinGrupoResponse, len(muestras))
+	for i, m := range muestras {
+		result[i] = toMuestraSinGrupoResponse(m)
+	}
+	return respond(c, http.StatusOK, result)
+}
+
+func (h *Handler) ListMuestrasByGrupo(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	if _, ok := orgIDFromCtx(c); !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	grupoID, err := parseUUID(c, "grupo_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de grupo inválido")
+	}
+	muestras, err := h.svc.ListMuestrasByGrupo(c.Request().Context(), grupoID, edicionID)
+	if err != nil {
+		if isNotFound(err) {
+			return fail(c, http.StatusNotFound, "GRUPO_NOT_FOUND", "El grupo solicitado no existe")
+		}
+		slog.Error("list muestras by grupo failed", "error", err, "grupo_id", grupoID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar las muestras del grupo")
+	}
+	result := make([]muestraGrupoResponse, len(muestras))
+	for i, m := range muestras {
+		result[i] = toMuestraGrupoResponse(m)
+	}
+	return respond(c, http.StatusOK, result)
+}

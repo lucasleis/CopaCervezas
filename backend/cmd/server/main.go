@@ -116,6 +116,17 @@ func main() {
 	admin.PATCH("/ediciones/:id/muestras/:muestra_id/aprobar", inscriptionHandler.AprobarMuestra)
 	admin.PATCH("/cervecerias/:id/estado-pago", inscriptionHandler.UpdateEstadoPago)
 
+	grupos := admin.Group("/ediciones/:id/grupos")
+	grupos.GET("", competitionHandler.ListGrupos)
+	grupos.POST("", competitionHandler.CreateGrupo)
+	grupos.PUT("/:grupo_id", competitionHandler.UpdateGrupo)
+	grupos.DELETE("/:grupo_id", competitionHandler.DeleteGrupo)
+	grupos.POST("/autoasignar", competitionHandler.AutoasignarGrupos)
+	grupos.GET("/:grupo_id/muestras", competitionHandler.ListMuestrasByGrupo)
+
+	admin.PATCH("/ediciones/:id/muestras/:muestra_id/grupo", competitionHandler.MoverMuestra)
+	admin.GET("/ediciones/:id/muestras/sin-grupo", competitionHandler.ListMuestrasSinGrupo)
+
 	cerveceria := protected.Group("/api/v1/cerveceria")
 	cerveceria.GET("/ediciones", inscriptionHandler.GetEdicionesActivas)
 	cerveceria.GET("/ediciones/:id/muestras", inscriptionHandler.ListMuestras)

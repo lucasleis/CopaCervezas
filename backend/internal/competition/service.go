@@ -326,6 +326,319 @@ func (s *Service) verifyEdicionOwnership(ctx context.Context, edicionID, orgID u
 	return nil
 }
 
+// GrupoConMuestrasError se retorna al intentar eliminar un grupo con muestras activas.
+type GrupoConMuestrasError struct{}
+
+func (e GrupoConMuestrasError) Error() string { return "el grupo tiene muestras activas" }
+
+// TodasAsignadasError se retorna cuando la autoasignación no encuentra muestras sin grupo.
+type TodasAsignadasError struct{}
+
+func (e TodasAsignadasError) Error() string { return "todas las muestras ya tienen grupo asignado" }
+
+const nombreGrupoVarios = "Varios"
+
+// Grupos
+
+func calcularCantRondas(cantMuestras int64) int32 {
+	switch {
+	case cantMuestras >= 33:
+		return 3
+	case cantMuestras >= 11:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func (s *Service) verifyEdicionEnPreCata(ctx context.Context, edicionID, orgID uuid.UUID) (db.Edicione, error) {
+	edicion, err := s.queries.GetEdicionByIDAndOrg(ctx, db.GetEdicionByIDAndOrgParams{ID: edicionID, OrgID: orgID})
+	if err != nil {
+		return db.Edicione{}, fmt.Errorf("competition: verify edicion pre-cata: %w", err)
+	}
+	if edicion.Estado != db.EstadoEdicionEnumPreCata {
+		return db.Edicione{}, &TransicionInvalidaError{Desde: string(edicion.Estado), Hacia: "pre-cata"}
+	}
+	return edicion, nil
+}
+
+func (s *Service) ListGrupos(ctx context.Context, edicionID, orgID uuid.UUID) ([]db.ListGruposEdicionRow, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list grupos: %w", err)
+	}
+	result, err := s.queries.ListGruposEdicion(ctx, edicionID)
+	if err != nil {
+		return nil, fmt.Errorf("competition: list grupos: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) CreateGrupo(ctx context.Context, edicionID, orgID uuid.UUID, nombre string, bosFlight *string) (db.Grupo, error) {
+	if _, err := s.verifyEdicionEnPreCata(ctx, edicionID, orgID); err != nil {
+		return db.Grupo{}, err
+	}
+	maxOrden, err := s.queries.MaxOrdenGrupos(ctx, edicionID)
+	if err != nil {
+		return db.Grupo{}, fmt.Errorf("competition: create grupo: %w", err)
+	}
+	orden, err := toInt32(maxOrden)
+	if err != nil {
+		return db.Grupo{}, fmt.Errorf("competition: create grupo: %w", err)
+	}
+	result, err := s.queries.CreateGrupo(ctx, db.CreateGrupoParams{
+		EdicionID:  edicionID,
+		Nombre:     nombre,
+		CantRondas: 1,
+		Orden:      orden + 1,
+		BosFlight:  toNullString(bosFlight),
+	})
+	if err != nil {
+		return db.Grupo{}, fmt.Errorf("competition: create grupo: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) UpdateGrupo(ctx context.Context, id, edicionID, orgID uuid.UUID, nombre string, bosFlight *string) (db.Grupo, error) {
+	if _, err := s.verifyEdicionEnPreCata(ctx, edicionID, orgID); err != nil {
+		return db.Grupo{}, err
+	}
+	result, err := s.queries.UpdateGrupo(ctx, db.UpdateGrupoParams{
+		ID:        id,
+		EdicionID: edicionID,
+		Nombre:    nombre,
+		BosFlight: toNullString(bosFlight),
+	})
+	if err != nil {
+		return db.Grupo{}, fmt.Errorf("competition: update grupo: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) DeleteGrupo(ctx context.Context, id, edicionID, orgID uuid.UUID) error {
+	if _, err := s.verifyEdicionEnPreCata(ctx, edicionID, orgID); err != nil {
+		return err
+	}
+	grupo, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: id, EdicionID: edicionID})
+	if err != nil {
+		return fmt.Errorf("competition: delete grupo: %w", err)
+	}
+	if grupo.CantMuestras > 0 {
+		return GrupoConMuestrasError{}
+	}
+	if err := s.queries.DeleteGrupo(ctx, db.DeleteGrupoParams{ID: id, EdicionID: edicionID}); err != nil {
+		return fmt.Errorf("competition: delete grupo: %w", err)
+	}
+	return nil
+}
+
+// AutoasignarGrupos agrupa las muestras activas sin grupo por estilo. Estilos con >= 10
+// muestras reciben grupo propio; el resto se acumula en un único grupo "Varios".
+func (s *Service) AutoasignarGrupos(ctx context.Context, edicionID, orgID uuid.UUID) (int, int, error) {
+	if _, err := s.verifyEdicionEnPreCata(ctx, edicionID, orgID); err != nil {
+		return 0, 0, err
+	}
+
+	countAntes, err := s.queries.CountMuestrasSinGrupo(ctx, db.CountMuestrasSinGrupoParams{
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+	}
+	if countAntes == 0 {
+		return 0, 0, TodasAsignadasError{}
+	}
+
+	estilos, err := s.queries.ListEstilosConMuestras(ctx, db.ListEstilosConMuestrasParams{
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+	}
+
+	maxOrden, err := s.queries.MaxOrdenGrupos(ctx, edicionID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+	}
+	orden, err := toInt32(maxOrden)
+	if err != nil {
+		return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+	}
+
+	var variosGrupoID uuid.NullUUID
+	gruposCreados := 0
+
+	for _, estilo := range estilos {
+		if estilo.CantMuestras >= 10 {
+			orden++
+			grupo, err := s.queries.CreateGrupo(ctx, db.CreateGrupoParams{
+				EdicionID:  edicionID,
+				Nombre:     estilo.EstiloNombre,
+				CantRondas: calcularCantRondas(estilo.CantMuestras),
+				Orden:      orden,
+			})
+			if err != nil {
+				return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+			}
+			if err := s.queries.AsignarGrupoMuestrasByEstilo(ctx, db.AsignarGrupoMuestrasByEstiloParams{
+				EdicionID: edicionID,
+				EstiloID:  estilo.EstiloID,
+				GrupoID:   uuid.NullUUID{UUID: grupo.ID, Valid: true},
+			}); err != nil {
+				return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+			}
+			gruposCreados++
+			continue
+		}
+
+		if !variosGrupoID.Valid {
+			orden++
+			grupo, err := s.queries.CreateGrupo(ctx, db.CreateGrupoParams{
+				EdicionID:  edicionID,
+				Nombre:     nombreGrupoVarios,
+				CantRondas: 1,
+				Orden:      orden,
+			})
+			if err != nil {
+				return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+			}
+			variosGrupoID = uuid.NullUUID{UUID: grupo.ID, Valid: true}
+			gruposCreados++
+		}
+		if err := s.queries.AsignarGrupoMuestrasByEstilo(ctx, db.AsignarGrupoMuestrasByEstiloParams{
+			EdicionID: edicionID,
+			EstiloID:  estilo.EstiloID,
+			GrupoID:   variosGrupoID,
+		}); err != nil {
+			return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+		}
+	}
+
+	if variosGrupoID.Valid {
+		variosMuestras, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{
+			ID:        variosGrupoID.UUID,
+			EdicionID: edicionID,
+		})
+		if err != nil {
+			return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+		}
+		if _, err := s.queries.UpdateGrupoCantRondas(ctx, db.UpdateGrupoCantRondasParams{
+			ID:         variosGrupoID.UUID,
+			CantRondas: calcularCantRondas(variosMuestras.CantMuestras),
+		}); err != nil {
+			return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+		}
+	}
+
+	countDespues, err := s.queries.CountMuestrasSinGrupo(ctx, db.CountMuestrasSinGrupoParams{
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		return 0, 0, fmt.Errorf("competition: autoasignar grupos: %w", err)
+	}
+	muestrasAsignadas := int(countAntes) - int(countDespues)
+
+	return gruposCreados, muestrasAsignadas, nil
+}
+
+// MoverMuestra reasigna manualmente una muestra a un grupo destino, recalculando
+// cant_rondas tanto del grupo destino como del grupo de origen (si existía).
+func (s *Service) MoverMuestra(ctx context.Context, muestraID, grupoID, edicionID, orgID uuid.UUID) error {
+	if _, err := s.verifyEdicionEnPreCata(ctx, edicionID, orgID); err != nil {
+		return err
+	}
+
+	muestra, err := s.queries.GetMuestraByIDEdicionOrg(ctx, db.GetMuestraByIDEdicionOrgParams{
+		ID:        muestraID,
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
+	}
+
+	if _, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{
+		ID:        grupoID,
+		EdicionID: edicionID,
+	}); err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
+	}
+
+	if _, err := s.queries.AsignarGrupoMuestra(ctx, db.AsignarGrupoMuestraParams{
+		ID:               muestraID,
+		GrupoID:          uuid.NullUUID{UUID: grupoID, Valid: true},
+		AsignacionManual: true,
+	}); err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
+	}
+
+	if err := s.recalcularCantRondas(ctx, grupoID, edicionID); err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
+	}
+
+	if muestra.GrupoID.Valid && muestra.GrupoID.UUID != grupoID {
+		if err := s.recalcularCantRondas(ctx, muestra.GrupoID.UUID, edicionID); err != nil {
+			return fmt.Errorf("competition: mover muestra: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) recalcularCantRondas(ctx context.Context, grupoID, edicionID uuid.UUID) error {
+	grupo, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: grupoID, EdicionID: edicionID})
+	if err != nil {
+		return err
+	}
+	_, err = s.queries.UpdateGrupoCantRondas(ctx, db.UpdateGrupoCantRondasParams{
+		ID:         grupoID,
+		CantRondas: calcularCantRondas(grupo.CantMuestras),
+	})
+	return err
+}
+
+func (s *Service) ListMuestrasSinGrupo(ctx context.Context, edicionID, orgID uuid.UUID) ([]db.ListMuestrasSinGrupoRow, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list muestras sin grupo: %w", err)
+	}
+	result, err := s.queries.ListMuestrasSinGrupo(ctx, db.ListMuestrasSinGrupoParams{
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("competition: list muestras sin grupo: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) ListMuestrasByGrupo(ctx context.Context, grupoID, edicionID uuid.UUID) ([]db.ListMuestrasByGrupoRow, error) {
+	if _, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: grupoID, EdicionID: edicionID}); err != nil {
+		return nil, fmt.Errorf("competition: list muestras by grupo: %w", err)
+	}
+	result, err := s.queries.ListMuestrasByGrupo(ctx, uuid.NullUUID{UUID: grupoID, Valid: true})
+	if err != nil {
+		return nil, fmt.Errorf("competition: list muestras by grupo: %w", err)
+	}
+	return result, nil
+}
+
+// toInt32 normaliza el resultado de COALESCE(MAX(...), 0), que el driver puede
+// devolver como int32 o int64 según el tipo inferido por Postgres.
+func toInt32(v interface{}) (int32, error) {
+	switch n := v.(type) {
+	case int32:
+		return n, nil
+	case int64:
+		return int32(n), nil
+	case nil:
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("tipo inesperado para orden: %T", v)
+	}
+}
+
 func toNullTime(t *time.Time) sql.NullTime {
 	if t == nil {
 		return sql.NullTime{}
