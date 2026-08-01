@@ -16,6 +16,62 @@ import type { Estilo } from "@/api/inscripcion";
 import EstiloDialog from "@/components/admin/EstiloDialog";
 import CamposDialog from "@/components/admin/CamposDialog";
 
+// Fila de estilo reutilizable
+function EstiloRow({
+  estilo,
+  isOrg,
+  indentado,
+  onEditar,
+  onCampos,
+  onEliminar,
+}: {
+  estilo: Estilo;
+  isOrg: boolean;
+  indentado: boolean;
+  onEditar: (e: Estilo) => void;
+  onCampos: (e: Estilo) => void;
+  onEliminar: (e: Estilo) => void;
+}) {
+  return (
+    <tr
+      className={`border-b border-neutral-100 last:border-0 ${isOrg ? "cursor-pointer hover:bg-neutral-50" : ""} ${indentado ? "bg-neutral-50" : ""}`}
+      onClick={() => isOrg && onEditar(estilo)}
+    >
+      <td className="px-4 py-2.5 font-mono text-xs font-medium text-neutral-400">
+        {estilo.codigo}
+      </td>
+      <td className="px-4 py-2.5 text-neutral-900">
+        {indentado ? (
+          <span className="flex items-center gap-1.5 pl-6 text-sm font-medium text-neutral-900">
+            <span className="text-neutral-300">↳</span>
+            {estilo.nombre}
+          </span>
+        ) : (
+          <span className="font-medium text-neutral-900">{estilo.nombre}</span>
+        )}
+      </td>
+      <td className={`px-4 py-2.5 text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
+        {estilo.requiere_info_adicional ? "Sí" : "No"}
+      </td>
+      <td className={`px-4 py-2.5 text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
+        {estilo.campos_info_adicional?.length ?? 0}
+      </td>
+      <td className="px-4 py-2.5">
+        {isOrg ? (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onCampos(estilo); }}>
+              Campos
+            </Button>
+            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); onEliminar(estilo); }}>
+              Eliminar
+            </Button>
+          </div>
+        ) : null}
+      </td>
+    </tr>
+  );
+}
+
 export default function EstilosPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [estiloEditando, setEstiloEditando] = useState<Estilo | null>(null);
@@ -61,9 +117,57 @@ export default function EstilosPage() {
     setCamposDialogOpen(true);
   }
 
-  const estilosFiltrados = (estilos ?? []).filter(e =>
-    `${e.codigo} ${e.nombre}`.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const orgIds = new Set(estilosOrg?.map(e => e.id) ?? []);
+
+  // Vista árbol: padres con sus hijos intercalados
+  function buildTree(todos: Estilo[]): { estilo: Estilo; indentado: boolean }[] {
+    const padres = todos.filter(e => !e.subestilo_de);
+    const hijosPorPadre = new Map<string, Estilo[]>();
+    for (const e of todos) {
+      if (e.subestilo_de) {
+        if (!hijosPorPadre.has(e.subestilo_de)) hijosPorPadre.set(e.subestilo_de, []);
+        hijosPorPadre.get(e.subestilo_de)!.push(e);
+      }
+    }
+    const result: { estilo: Estilo; indentado: boolean }[] = [];
+    for (const padre of padres) {
+      result.push({ estilo: padre, indentado: false });
+      const hijos = hijosPorPadre.get(padre.id) ?? [];
+      for (const hijo of hijos) {
+        result.push({ estilo: hijo, indentado: true });
+      }
+    }
+    // Agregar huérfanos (hijos cuyo padre no está en la lista)
+    const enArbol = new Set(result.map(r => r.estilo.id));
+    for (const e of todos) {
+      if (!enArbol.has(e.id)) result.push({ estilo: e, indentado: false });
+    }
+    return result;
+  }
+
+  const hayBusqueda = busqueda.trim().length > 0;
+
+  const filas = (() => {
+    if (!hayBusqueda) return buildTree(estilos ?? []);
+    const todos = estilos ?? [];
+    const busquedaLower = busqueda.toLowerCase();
+    // IDs que matchean directamente
+    const matchIds = new Set(
+      todos.filter(e => `${e.codigo} ${e.nombre}`.toLowerCase().includes(busquedaLower)).map(e => e.id)
+    );
+    // Agregar padres de los que matchean
+    const idsPadres = new Set<string>();
+    for (const e of todos) {
+      if (matchIds.has(e.id) && e.subestilo_de) idsPadres.add(e.subestilo_de);
+    }
+    // Agregar hijos de los padres que matchean
+    const idsHijos = new Set<string>();
+    for (const e of todos) {
+      if (e.subestilo_de && matchIds.has(e.subestilo_de)) idsHijos.add(e.id);
+    }
+    const idsVisibles = new Set([...matchIds, ...idsPadres, ...idsHijos]);
+    return buildTree(todos.filter(e => idsVisibles.has(e.id)));
+  })();
 
   return (
     <div className="p-8">
@@ -85,11 +189,11 @@ export default function EstilosPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-600">Código</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Nombre</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Requiere info adicional</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Campos definidos</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Acciones</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Código</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Nombre</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Requiere info adicional</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Campos definidos</th>
+              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -97,21 +201,11 @@ export default function EstilosPage() {
               <>
                 {[1, 2, 3].map((i) => (
                   <tr key={i} className="border-b border-neutral-100">
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-12" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-40" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-10" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-4 w-10" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Skeleton className="h-7 w-24" />
-                    </td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-10" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-4 w-10" /></td>
+                    <td className="px-4 py-3"><Skeleton className="h-7 w-24" /></td>
                   </tr>
                 ))}
               </>
@@ -125,55 +219,25 @@ export default function EstilosPage() {
               </tr>
             )}
 
-            {!isLoading && !isError && estilosFiltrados.length === 0 && (
+            {!isLoading && !isError && filas.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-500">
-                  {busqueda ? "No se encontraron estilos." : "Todavía no creaste ningún estilo propio."}
+                  {hayBusqueda ? "No se encontraron estilos." : "No hay estilos cargados."}
                 </td>
               </tr>
             )}
 
-            {!isLoading &&
-              !isError &&
-              estilosFiltrados.map((estilo) => (
-                <tr
-                  key={estilo.id}
-                  className="cursor-pointer border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                  onClick={() => estilosOrg?.some(e => e.id === estilo.id) && handleEditar(estilo)}
-                >
-                  <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-900">
-                    {estilo.codigo}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-900">{estilo.nombre}</td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {estilo.requiere_info_adicional ? "Sí" : "No"}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
-                    {estilo.campos_info_adicional?.length ?? 0}
-                  </td>
-                  <td className="px-4 py-3">
-                    {estilosOrg?.some(e => e.id === estilo.id) ? (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => { e.stopPropagation(); handleCampos(estilo); }}
-                        >
-                          Campos
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={(e) => { e.stopPropagation(); setEstiloAEliminar(estilo); }}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    ) : null}
-                  </td>
-                </tr>
-              ))}
+            {!isLoading && !isError && filas.map(({ estilo, indentado }) => (
+              <EstiloRow
+                key={estilo.id}
+                estilo={estilo}
+                isOrg={orgIds.has(estilo.id)}
+                indentado={indentado}
+                onEditar={handleEditar}
+                onCampos={handleCampos}
+                onEliminar={setEstiloAEliminar}
+              />
+            ))}
           </tbody>
         </table>
       </div>
