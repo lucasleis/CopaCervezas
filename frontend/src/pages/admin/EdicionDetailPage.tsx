@@ -124,7 +124,7 @@ function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
         </div>
         {formError && <p className="text-sm text-red-500">{formError}</p>}
         <div className="flex justify-end">
-          <Button type="submit" disabled={mutation.isPending} className="w-[140px]">
+          <Button type="submit" disabled={mutation.isPending} className="w-[132px]">
             {mutation.isPending ? "Guardando..." : "Guardar cambios"}
           </Button>
         </div>
@@ -139,6 +139,8 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Precio | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Precio | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [pNombre, setPNombre] = useState("");
   const [pPrecio, setPPrecio] = useState("");
   const [pDesde, setPDesde] = useState("");
@@ -189,9 +191,8 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
   function closeModal() { setModalOpen(false); setEditing(null); }
 
   function handleDelete(p: Precio) {
-    if (window.confirm(`¿Eliminar el precio "${p.nombre}"?`)) {
-      deleteMutation.mutate(p.id);
-    }
+    setDeleteTarget(p);
+    setDeleteConfirmOpen(true);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -258,6 +259,32 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
         </div>
       </div>
 
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent showCloseButton className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar precio?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-700 leading-relaxed">
+            Vas a eliminar el precio <span className="font-semibold">"{deleteTarget?.nombre}"</span>. Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                setDeleteConfirmOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
           <DialogHeader>
@@ -302,6 +329,8 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Lugar | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Lugar | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [lNombre, setLNombre] = useState("");
   const [lDireccion, setLDireccion] = useState("");
   const [lCiudad, setLCiudad] = useState("");
@@ -351,9 +380,8 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
   function closeModal() { setModalOpen(false); setEditing(null); }
 
   function handleDelete(l: Lugar) {
-    if (window.confirm(`¿Eliminar el lugar "${l.nombre}"?`)) {
-      deleteMutation.mutate(l.id);
-    }
+    setDeleteTarget(l);
+    setDeleteConfirmOpen(true);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -425,6 +453,32 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
         </div>
       </div>
 
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent showCloseButton className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar lugar?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-700 leading-relaxed">
+            Vas a eliminar el lugar <span className="font-semibold">"{deleteTarget?.nombre}"</span>. Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                setDeleteConfirmOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
           <DialogHeader>
@@ -473,6 +527,8 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Descuento | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Descuento | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [dCodigo, setDCodigo] = useState("");
   const [dPorcentaje, setDPorcentaje] = useState("");
   const [dMaxUsos, setDMaxUsos] = useState("");
@@ -523,9 +579,8 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
   function closeModal() { setModalOpen(false); setEditing(null); }
 
   function handleDelete(d: Descuento) {
-    if (window.confirm(`¿Eliminar el código "${d.codigo}"?`)) {
-      deleteMutation.mutate(d.id);
-    }
+    setDeleteTarget(d);
+    setDeleteConfirmOpen(true);
   }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -603,6 +658,32 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
           <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar código</Button>
         </div>
       </div>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent showCloseButton className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar código?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-neutral-700 leading-relaxed">
+            Vas a eliminar el código <span className="font-semibold">"{deleteTarget?.codigo}"</span>. Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                setDeleteConfirmOpen(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!open) closeModal(); }}>
         <DialogContent showCloseButton>
@@ -711,7 +792,7 @@ export default function EdicionDetailPage() {
             <Button
               variant="default"
               onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
-              className="w-[140px]"
+              className="w-[132px]"
             >
               Gestionar grupos →
             </Button>
