@@ -13,12 +13,12 @@ export default function EstilosPage() {
   const [camposDialogOpen, setCamposDialogOpen] = useState(false);
   const [estiloCampos, setEstiloCampos] = useState<Estilo | null>(null);
 
-  const { data: estilos, isLoading, isError } = useQuery({
+  const { data: estilosOrg } = useQuery({
     queryKey: ["estilos-org"],
     queryFn: listEstilosOrg,
   });
 
-  const { data: catalogoCompleto } = useQuery({
+  const { data: estilos, isLoading, isError } = useQuery({
     queryKey: ["estilos-catalogo"],
     queryFn: listEstilosCatalogo,
   });
@@ -103,7 +103,7 @@ export default function EstilosPage() {
                 <tr
                   key={estilo.id}
                   className="cursor-pointer border-b border-neutral-100 last:border-0 hover:bg-neutral-50"
-                  onClick={() => handleEditar(estilo)}
+                  onClick={() => estilosOrg?.some(e => e.id === estilo.id) && handleEditar(estilo)}
                 >
                   <td className="px-4 py-3 font-mono text-xs font-medium text-neutral-900">
                     {estilo.codigo}
@@ -116,16 +116,18 @@ export default function EstilosPage() {
                     {estilo.campos_info_adicional?.length ?? 0}
                   </td>
                   <td className="px-4 py-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCampos(estilo);
-                      }}
-                    >
-                      Campos
-                    </Button>
+                    {estilosOrg?.some(e => e.id === estilo.id) ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCampos(estilo);
+                        }}
+                      >
+                        Campos
+                      </Button>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -140,7 +142,7 @@ export default function EstilosPage() {
           setDialogOpen(open);
           if (!open) setEstiloEditando(null);
         }}
-        estilos={catalogoCompleto ?? []}
+        estilos={estilos ?? []}
         estiloExistente={estiloEditando}
       />
 
