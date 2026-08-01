@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listEstilosOrg } from "@/api/estilos";
+import { listEstilosOrg, listEstilosCatalogo } from "@/api/estilos";
 import type { Estilo } from "@/api/inscripcion";
 import EstiloDialog from "@/components/admin/EstiloDialog";
 import CamposDialog from "@/components/admin/CamposDialog";
@@ -16,6 +16,11 @@ export default function EstilosPage() {
   const { data: estilos, isLoading, isError } = useQuery({
     queryKey: ["estilos-org"],
     queryFn: listEstilosOrg,
+  });
+
+  const { data: catalogoCompleto } = useQuery({
+    queryKey: ["estilos-catalogo"],
+    queryFn: listEstilosCatalogo,
   });
 
   function handleCrear() {
@@ -135,7 +140,7 @@ export default function EstilosPage() {
           setDialogOpen(open);
           if (!open) setEstiloEditando(null);
         }}
-        estilos={estilos ?? []}
+        estilos={catalogoCompleto ?? []}
         estiloExistente={estiloEditando}
       />
 

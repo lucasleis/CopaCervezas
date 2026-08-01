@@ -69,3 +69,8 @@ export async function updateEstiloCampos(
   );
   return response.data.data;
 }
+
+export async function listEstilosCatalogo(): Promise<Estilo[]> {
+  const response = await apiClient.get<ApiResponse<Estilo[]>>("/api/v1/estilos/catalogo");
+  return response.data.data;
+}

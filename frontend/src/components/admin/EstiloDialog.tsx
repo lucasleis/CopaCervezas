@@ -9,13 +9,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createEstilo, updateEstilo } from "@/api/estilos";
@@ -55,6 +48,8 @@ export default function EstiloDialog({
   const [codigoError, setCodigoError] = useState<string | null>(null);
   const [nombreError, setNombreError] = useState<string | null>(null);
   const [similar, setSimilar] = useState<Similar | null>(null);
+  const [busquedaSubestilo, setBusquedaSubestilo] = useState("");
+  const [subestiloOpen, setSubestiloOpen] = useState(false);
 
   function resetForm() {
     setCodigo("");
@@ -64,6 +59,8 @@ export default function EstiloDialog({
     setCodigoError(null);
     setNombreError(null);
     setSimilar(null);
+    setBusquedaSubestilo("");
+    setSubestiloOpen(false);
   }
 
   const mutation = useMutation({
@@ -211,28 +208,62 @@ export default function EstiloDialog({
 
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-neutral-700">Subestilo de</label>
-            <Select
-              value={subestiloDe || "__none__"}
-              onValueChange={(v) => setSubestiloDe(v === "__none__" ? "" : (v ?? ""))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue>
-                  {(value: string | null) => {
-                    if (!value || value === "__none__") return "Ninguno";
-                    const found = opcionesSubestilo.find((e) => e.id === value);
-                    return found ? `${found.codigo} - ${found.nombre}` : "Ninguno";
-                  }}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Ninguno</SelectItem>
-                {opcionesSubestilo.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.codigo} - {e.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              placeholder="Buscar estilo..."
+              value={busquedaSubestilo || (subestiloDe ? (opcionesSubestilo.find(e => e.id === subestiloDe) ? `${opcionesSubestilo.find(e => e.id === subestiloDe)!.codigo} - ${opcionesSubestilo.find(e => e.id === subestiloDe)!.nombre}` : "") : "")}
+              onChange={(e) => {
+                setBusquedaSubestilo(e.target.value);
+                if (!e.target.value) setSubestiloDe("");
+              }}
+              onFocus={() => { setSubestiloOpen(true); setBusquedaSubestilo(""); }}
+              onBlur={() => setTimeout(() => setSubestiloOpen(false), 150)}
+            />
+            {subestiloOpen && (
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-neutral-200 bg-white shadow-md">
+                <button
+                  type="button"
+                  className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50"
+                  onClick={() => { setSubestiloDe(""); setBusquedaSubestilo(""); setSubestiloOpen(false); }}
+                >
+                  Ninguno
+                </button>
+                {opcionesSubestilo
+                  .filter(e =>
+                    `${e.codigo} ${e.nombre}`.toLowerCase().includes(busquedaSubestilo.toLowerCase())
+                  )
+                  .slice(0, 20)
+                  .map(e => (
+                    <button
+                      key={e.id}
+                      type="button"
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-neutral-50"
+                      onClick={() => {
+                        setSubestiloDe(e.id);
+                        setBusquedaSubestilo("");
+                        setSubestiloOpen(false);
+                      }}
+                    >
+                      <span className="font-mono text-xs text-neutral-500 mr-2">{e.codigo}</span>
+                      {e.nombre}
+                    </button>
+                  ))
+                }
+                {opcionesSubestilo.filter(e =>
+                  `${e.codigo} ${e.nombre}`.toLowerCase().includes(busquedaSubestilo.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-3 py-2 text-sm text-neutral-400">Sin resultados</div>
+                )}
+              </div>
+            )}
+            {subestiloDe && !busquedaSubestilo && (
+              <button
+                type="button"
+                className="text-xs text-neutral-400 hover:text-red-500"
+                onClick={() => setSubestiloDe("")}
+              >
+                × Quitar subestilo
+              </button>
+            )}
           </div>
 
           <div className="space-y-1.5">
