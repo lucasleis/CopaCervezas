@@ -69,10 +69,24 @@ func NewService(queries *db.Queries) *Service {
 	return &Service{queries: queries}
 }
 
-func (s *Service) GetEdicionesActivasCerveceria(ctx context.Context, orgID uuid.UUID) ([]db.GetEdicionesActivasCerveceriaRow, error) {
-	result, err := s.queries.GetEdicionesActivasCerveceria(ctx, orgID)
+func (s *Service) GetEdicionesActivasCerveceria(ctx context.Context, usuarioID, orgID uuid.UUID) ([]db.GetEdicionesActivasCerveceriaRow, error) {
+	result, err := s.queries.GetEdicionesActivasCerveceria(ctx, db.GetEdicionesActivasCerveceriaParams{
+		OrgID:     orgID,
+		UsuarioID: usuarioID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("inscription: get ediciones activas cerveceria: %w", err)
+	}
+	return result, nil
+}
+
+func (s *Service) GetEdicionesDisponiblesCerveceria(ctx context.Context, usuarioID, orgID uuid.UUID) ([]db.GetEdicionesDisponiblesCerveceriaRow, error) {
+	result, err := s.queries.GetEdicionesDisponiblesCerveceria(ctx, db.GetEdicionesDisponiblesCerveceriaParams{
+		OrgID:     orgID,
+		UsuarioID: usuarioID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("inscription: get ediciones disponibles cerveceria: %w", err)
 	}
 	return result, nil
 }

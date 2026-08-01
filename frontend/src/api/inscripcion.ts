@@ -46,6 +46,14 @@ export interface EdicionCerveceria {
   estado: string;
 }
 
+export interface EdicionDisponible {
+  id: string;
+  nombre: string;
+  fecha_inicio_inscripcion: string | null;
+  fecha_fin_inscripcion: string | null;
+  fecha_evento: string | null;
+}
+
 export type EstadoPago = "pendiente" | "pagado";
 
 export interface MuestraAdmin {
@@ -75,6 +83,13 @@ interface ApiResponse<T> {
 export async function getEdicionesActivasCerveceria(): Promise<EdicionCerveceria[]> {
   const response = await apiClient.get<ApiResponse<EdicionCerveceria[]>>(
     "/api/v1/cerveceria/ediciones"
+  );
+  return response.data.data;
+}
+
+export async function getEdicionesDisponiblesCerveceria(): Promise<EdicionDisponible[]> {
+  const response = await apiClient.get<ApiResponse<EdicionDisponible[]>>(
+    "/api/v1/cerveceria/ediciones/disponibles"
   );
   return response.data.data;
 }

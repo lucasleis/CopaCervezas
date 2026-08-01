@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   deleteMuestra,
+  getEdicionesDisponiblesCerveceria,
   getEstilosCatalogo,
   getMuestrasCerveceria,
   type Muestra,
@@ -50,6 +51,19 @@ export default function MisMuestrasPage() {
     isLoading: edicionLoading,
     isError: edicionError,
   } = useEdicionActivaCerveceria();
+
+  const {
+    data: edicionesDisponibles,
+    isLoading: disponiblesLoading,
+  } = useQuery({
+    queryKey: ["ediciones-disponibles-cerveceria"],
+    queryFn: getEdicionesDisponiblesCerveceria,
+    enabled: !edicionLoading && !edicionError && !edicionId,
+  });
+
+  function handleInscribirme() {
+    toast("Próximamente");
+  }
 
   const {
     data: muestras,
@@ -125,8 +139,37 @@ export default function MisMuestrasPage() {
       </div>
 
       {!edicionLoading && !edicionError && !edicionId && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          No hay ninguna edición con inscripción abierta en este momento.
+        <div>
+          <h2 className="mb-3 text-lg font-semibold text-neutral-900">
+            Competencias disponibles
+          </h2>
+          {disponiblesLoading && (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          )}
+          {!disponiblesLoading && (edicionesDisponibles?.length ?? 0) === 0 && (
+            <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
+              No hay ninguna edición con inscripción abierta en este momento.
+            </div>
+          )}
+          {!disponiblesLoading && edicionesDisponibles && edicionesDisponibles.length > 0 && (
+            <div className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
+              {edicionesDisponibles.map((edicion) => (
+                <div
+                  key={edicion.id}
+                  className="flex items-center justify-between gap-4 px-4 py-3"
+                >
+                  <p className="font-medium text-neutral-900">{edicion.nombre}</p>
+                  <Button size="sm" onClick={handleInscribirme}>
+                    Inscribirme
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

@@ -130,6 +130,7 @@ func main() {
 
 	cerveceria := protected.Group("/api/v1/cerveceria")
 	cerveceria.GET("/ediciones", inscriptionHandler.GetEdicionesActivas)
+	cerveceria.GET("/ediciones/disponibles", inscriptionHandler.GetEdicionesDisponibles)
 	cerveceria.GET("/ediciones/:id/muestras", inscriptionHandler.ListMuestras)
 	cerveceria.POST("/ediciones/:id/muestras", inscriptionHandler.CreateMuestra)
 	cerveceria.PATCH("/ediciones/:id/muestras/:muestra_id", inscriptionHandler.UpdateMuestra)

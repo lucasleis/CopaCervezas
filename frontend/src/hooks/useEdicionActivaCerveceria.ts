@@ -17,6 +17,9 @@ export function useEdicionActivaCerveceria(): UseEdicionActivaCerveceriaResult {
     queryFn: getEdicionesActivasCerveceria,
   });
 
+  // data === [] es un estado válido (sin edición activa), no un error.
+  // isError de react-query solo se activa en fallos reales de la request
+  // (red, 5xx, etc.), así que se propaga tal cual.
   return {
     ediciones: data ?? [],
     edicionId: data && data.length > 0 ? data[0].id : null,

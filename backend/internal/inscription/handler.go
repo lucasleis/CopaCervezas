@@ -187,11 +187,15 @@ func (h *Handler) GetEdicionesActivas(c echo.Context) error {
 	if !requireBrewery(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
 	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
 	orgID, ok := orgIDFromCtx(c)
 	if !ok {
 		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
 	}
-	ediciones, err := h.svc.GetEdicionesActivasCerveceria(c.Request().Context(), orgID)
+	ediciones, err := h.svc.GetEdicionesActivasCerveceria(c.Request().Context(), usuarioID, orgID)
 	if err != nil {
 		slog.Error("get ediciones activas cerveceria failed", "error", err, "org_id", orgID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener las ediciones")
@@ -199,6 +203,52 @@ func (h *Handler) GetEdicionesActivas(c echo.Context) error {
 	result := make([]edicionCerveceriaResponse, len(ediciones))
 	for i, e := range ediciones {
 		result[i] = edicionCerveceriaResponse{ID: e.ID.String(), Nombre: e.Nombre, Estado: string(e.Estado)}
+	}
+	return respond(c, http.StatusOK, result)
+}
+
+type edicionDisponibleResponse struct {
+	ID                     string  `json:"id"`
+	Nombre                 string  `json:"nombre"`
+	FechaInicioInscripcion *string `json:"fecha_inicio_inscripcion"`
+	FechaFinInscripcion    *string `json:"fecha_fin_inscripcion"`
+	FechaEvento            *string `json:"fecha_evento"`
+}
+
+func formatNullTime(t sql.NullTime) *string {
+	if !t.Valid {
+		return nil
+	}
+	formatted := t.Time.Format("2006-01-02T15:04:05Z07:00")
+	return &formatted
+}
+
+func (h *Handler) GetEdicionesDisponibles(c echo.Context) error {
+	if !requireBrewery(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	ediciones, err := h.svc.GetEdicionesDisponiblesCerveceria(c.Request().Context(), usuarioID, orgID)
+	if err != nil {
+		slog.Error("get ediciones disponibles cerveceria failed", "error", err, "org_id", orgID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener las ediciones disponibles")
+	}
+	result := make([]edicionDisponibleResponse, len(ediciones))
+	for i, e := range ediciones {
+		result[i] = edicionDisponibleResponse{
+			ID:                     e.ID.String(),
+			Nombre:                 e.Nombre,
+			FechaInicioInscripcion: formatNullTime(e.FechaInicioInscripcion),
+			FechaFinInscripcion:    formatNullTime(e.FechaFinInscripcion),
+			FechaEvento:            formatNullTime(e.FechaEvento),
+		}
 	}
 	return respond(c, http.StatusOK, result)
 }

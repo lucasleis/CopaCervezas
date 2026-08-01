@@ -1,7 +1,20 @@
 -- name: GetEdicionesActivasCerveceria :many
-SELECT id, nombre, estado FROM ediciones
-WHERE org_id = $1 AND estado = 'inscripcion'
-ORDER BY created_at DESC;
+SELECT e.id, e.nombre, e.estado
+FROM ediciones e
+INNER JOIN cervecerias c ON c.edicion_id = e.id AND c.usuario_id = $2
+WHERE e.org_id = $1 AND e.estado = 'inscripcion'
+ORDER BY e.created_at DESC;
+
+-- name: GetEdicionesDisponiblesCerveceria :many
+SELECT id, nombre, fecha_inicio_inscripcion, fecha_fin_inscripcion, fecha_evento
+FROM ediciones e
+WHERE e.org_id = $1
+  AND e.estado = 'inscripcion'
+  AND NOT EXISTS (
+      SELECT 1 FROM cervecerias c
+      WHERE c.edicion_id = e.id AND c.usuario_id = $2
+  )
+ORDER BY e.created_at DESC;
 
 -- name: GetCerveceriaByUsuario :one
 SELECT * FROM cervecerias

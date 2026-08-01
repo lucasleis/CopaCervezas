@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { cambiarEstado, type Edicion, type EstadoEdicion as EstadoEdicionType } from "@/api/ediciones";
 
 const ESTADO_CONFIG: Record<EstadoEdicionType, { label: string; className: string }> = {
@@ -24,14 +32,17 @@ interface Props {
 
 export default function EstadoEdicion({ edicion }: Props) {
   const queryClient = useQueryClient();
+  const [confirmando, setConfirmando] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (destino: EstadoEdicionType) => cambiarEstado(edicion.id, destino),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["edicion", edicion.id] });
       toast.success("Estado actualizado");
+      setConfirmando(false);
     },
     onError: (error) => {
+      setConfirmando(false);
       if (isAxiosError(error) && error.response?.status === 422) {
         const body = error.response.data as { error?: { code: string; message: string } };
         const code = body?.error?.code;
@@ -62,13 +73,41 @@ export default function EstadoEdicion({ edicion }: Props) {
       {transicion && (
         <Button
           size="sm"
-          variant="outline"
+          variant="default"
           disabled={mutation.isPending}
-          onClick={() => mutation.mutate(transicion.destino)}
+          onClick={() => setConfirmando(true)}
         >
           {mutation.isPending ? "Cambiando..." : transicion.label}
         </Button>
       )}
+
+      <Dialog open={confirmando} onOpenChange={(open) => { if (!open && !mutation.isPending) setConfirmando(false); }}>
+        <DialogContent showCloseButton className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar cambio de estado</DialogTitle>
+          </DialogHeader>
+          {transicion && (
+            <p className="text-sm text-neutral-700 leading-relaxed">
+              ¿Confirmás que querés pasar la edición al estado{" "}
+              <span className="font-semibold">
+                {ESTADO_CONFIG[transicion.destino]?.label ?? transicion.destino}
+              </span>
+              ? Esta acción no se puede deshacer.
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmando(false)} disabled={mutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={mutation.isPending}
+              onClick={() => transicion && mutation.mutate(transicion.destino)}
+            >
+              {mutation.isPending ? "Cambiando..." : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
