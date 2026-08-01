@@ -224,7 +224,10 @@ export default function EdicionesPage() {
                   key={edicion.id}
                   className="border-b border-neutral-100 last:border-0"
                 >
-                  <td className="px-4 py-3 font-medium text-neutral-900">
+                  <td
+                    className="px-4 py-3 cursor-pointer hover:text-primary font-medium"
+                    onClick={() => navigate(`/admin/ediciones/${edicion.id}`)}
+                  >
                     {edicion.nombre}
                   </td>
                   <td className="px-4 py-3">
