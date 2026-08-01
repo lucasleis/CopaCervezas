@@ -170,7 +170,8 @@
       "Bash(xargs -r kill)",
       "Bash(fuser -k 5173/tcp)",
       "Bash(grep *)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(clear)"
     ]
   }
 }

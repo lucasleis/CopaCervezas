@@ -28,6 +28,9 @@ var ErrTipoCampoInvalido = errors.New("styles: tipo de campo inválido")
 // ErrClaveCampoInvalida se retorna cuando la clave de un campo no cumple el formato snake_case.
 var ErrClaveCampoInvalida = errors.New("styles: clave de campo inválida, debe ser snake_case")
 
+// ErrEstiloEnUso se retorna al intentar eliminar un estilo referenciado por muestras o subestilos.
+var ErrEstiloEnUso = errors.New("styles: el estilo tiene muestras o subestilos asociados")
+
 // ErrEstiloSimilarEncontrado se retorna cuando hay estilos con nombre similar y no se confirmó la creación.
 type ErrEstiloSimilarEncontrado struct {
 	Similares []db.SearchEstilosSimilaresRow
@@ -191,6 +194,33 @@ func (s *Service) UpdateEstiloCampos(ctx context.Context, id, orgID uuid.UUID, r
 		return db.Estilo{}, fmt.Errorf("styles: update estilo campos: %w", err)
 	}
 	return result, nil
+}
+
+func (s *Service) DeleteEstilo(ctx context.Context, id, orgID uuid.UUID) error {
+	if _, err := s.getOwnedEstilo(ctx, id, orgID); err != nil {
+		return err
+	}
+
+	countMuestras, err := s.queries.CountMuestrasByEstilo(ctx, id)
+	if err != nil {
+		return fmt.Errorf("styles: delete estilo: count muestras: %w", err)
+	}
+	if countMuestras > 0 {
+		return ErrEstiloEnUso
+	}
+
+	countSubestilos, err := s.queries.CountSubestilosByEstiloPadre(ctx, uuid.NullUUID{UUID: id, Valid: true})
+	if err != nil {
+		return fmt.Errorf("styles: delete estilo: count subestilos: %w", err)
+	}
+	if countSubestilos > 0 {
+		return ErrEstiloEnUso
+	}
+
+	if err := s.queries.DeleteEstilo(ctx, id); err != nil {
+		return fmt.Errorf("styles: delete estilo: %w", err)
+	}
+	return nil
 }
 
 // getOwnedEstilo verifica que el estilo exista y pertenezca a orgID.

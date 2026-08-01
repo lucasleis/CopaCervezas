@@ -74,3 +74,7 @@ export async function listEstilosCatalogo(): Promise<Estilo[]> {
   const response = await apiClient.get<ApiResponse<Estilo[]>>("/api/v1/estilos/catalogo");
   return response.data.data;
 }
+
+export async function deleteEstilo(id: string): Promise<void> {
+  await apiClient.delete(`/api/v1/admin/estilos/${id}`);
+}

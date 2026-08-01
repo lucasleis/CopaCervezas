@@ -111,6 +111,7 @@ func main() {
 	admin.POST("/estilos", stylesHandler.Create)
 	admin.PATCH("/estilos/:id", stylesHandler.Update)
 	admin.PUT("/estilos/:id/campos", stylesHandler.UpdateCampos)
+	admin.DELETE("/estilos/:id", stylesHandler.Delete)
 
 	admin.GET("/ediciones/:id/inscripcion/muestras", inscriptionHandler.AdminListMuestras)
 	admin.PATCH("/ediciones/:id/muestras/:muestra_id/aprobar", inscriptionHandler.AprobarMuestra)

@@ -37,6 +37,15 @@ SET campos_info_adicional = $2, requiere_info_adicional = $3
 WHERE id = $1 AND org_id IS NOT NULL
 RETURNING *;
 
+-- name: CountMuestrasByEstilo :one
+SELECT COUNT(*) FROM muestras WHERE estilo_id = $1;
+
+-- name: CountSubestilosByEstiloPadre :one
+SELECT COUNT(*) FROM estilos WHERE subestilo_de = $1;
+
+-- name: DeleteEstilo :exec
+DELETE FROM estilos WHERE id = $1 AND org_id IS NOT NULL;
+
 -- name: SearchEstilosSimilares :many
 SELECT id, org_id, codigo, nombre
 FROM estilos

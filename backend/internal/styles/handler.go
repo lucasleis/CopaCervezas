@@ -235,6 +235,34 @@ func (h *Handler) Update(c echo.Context) error {
 	})
 }
 
+func (h *Handler) Delete(c echo.Context) error {
+	if !requireAdmin(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	id, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de estilo inválido")
+	}
+	if err := h.svc.DeleteEstilo(c.Request().Context(), id, orgID); err != nil {
+		if errors.Is(err, ErrEstiloGlobalNoEditable) {
+			return fail(c, http.StatusForbidden, "ESTILO_GLOBAL_NO_EDITABLE", "El catálogo BJCP global no es editable")
+		}
+		if errors.Is(err, ErrEstiloNotFound) || errors.Is(err, sql.ErrNoRows) {
+			return fail(c, http.StatusNotFound, "ESTILO_NOT_FOUND", "El estilo solicitado no existe")
+		}
+		if errors.Is(err, ErrEstiloEnUso) {
+			return fail(c, http.StatusConflict, "ESTILO_EN_USO", "El estilo tiene muestras o subestilos asociados")
+		}
+		slog.Error("delete estilo failed", "error", err, "id", id)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al eliminar el estilo")
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 func (h *Handler) UpdateCampos(c echo.Context) error {
 	if !requireAdmin(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
