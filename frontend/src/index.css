@@ -66,7 +66,7 @@
 
 /* Mantener :root solo para los tokens que shadcn necesita como CSS vars nativas */
 :root {
-  --background: var(--color-neutral-50);
+  --background: #ffffff;
   --foreground: var(--color-neutral-900);
   --primary: var(--color-primary-500);
   --primary-foreground: #ffffff;

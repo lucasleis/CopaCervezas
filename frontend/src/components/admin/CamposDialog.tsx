@@ -47,6 +47,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
   const [obligatorio, setObligatorio] = useState(false);
   const [claveError, setClaveError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [campoAEliminar, setCampoAEliminar] = useState<string | null>(null);
 
   function resetNuevoCampo() {
     setClave("");
@@ -77,8 +78,11 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
     resetNuevoCampo();
   }
 
-  function handleEliminarCampo(claveAEliminar: string) {
-    setCampos((prev) => prev.filter((c) => c.clave !== claveAEliminar));
+  function confirmarEliminarCampo() {
+    if (campoAEliminar) {
+      setCampos((prev) => prev.filter((c) => c.clave !== campoAEliminar));
+    }
+    setCampoAEliminar(null);
   }
 
   const mutation = useMutation({
@@ -113,6 +117,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
       setCampos(estilo.campos_info_adicional ?? []);
       resetNuevoCampo();
       setFormError(null);
+      setCampoAEliminar(null);
     }
     onOpenChange(next);
   }
@@ -147,13 +152,34 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                       <td className="px-3 py-2">{TIPO_LABEL[campo.tipo]}</td>
                       <td className="px-3 py-2">{campo.obligatorio ? "Sí" : "No"}</td>
                       <td className="px-3 py-2 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEliminarCampo(campo.clave)}
-                        >
-                          Eliminar
-                        </Button>
+                        {campoAEliminar === campo.clave ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-neutral-600">¿Confirmar?</span>
+                            <Button
+                              size="sm"
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                              onClick={confirmarEliminarCampo}
+                            >
+                              Eliminar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setCampoAEliminar(null)}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => { console.log("eliminar click", campo.clave); setCampoAEliminar(campo.clave); }}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -163,11 +189,11 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
           )}
 
           {campos.length === 0 && (
-            <p className="text-sm text-neutral-500">Este estilo todavía no tiene campos definidos.</p>
+            <p className="text-sm italic text-neutral-400">Este estilo todavía no tiene campos definidos.</p>
           )}
 
-          <div className="space-y-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-            <p className="text-xs font-medium text-neutral-500">Agregar campo</p>
+          <div className="space-y-3 border-t border-neutral-200 pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">Agregar campo</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-neutral-700">Clave</label>
@@ -175,7 +201,6 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                   value={clave}
                   onChange={(e) => setClave(e.target.value)}
                   placeholder="ej: variedades_lupulo"
-                  className="bg-white"
                 />
               </div>
               <div className="space-y-1">
@@ -184,13 +209,12 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="ej: Variedades de lúpulo"
-                  className="bg-white"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-neutral-700">Tipo</label>
                 <Select value={tipo} onValueChange={(v) => setTipo((v as CampoDefinicion["tipo"]) ?? "text")}>
-                  <SelectTrigger className="w-full bg-white">
+                  <SelectTrigger className="w-full">
                     <SelectValue>{TIPO_LABEL[tipo]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
