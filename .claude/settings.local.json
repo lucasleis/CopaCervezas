@@ -174,7 +174,9 @@
       "Bash(clear)",
       "Bash(psql *)",
       "Bash(gofmt -w internal/inscription/handler.go internal/inscription/service.go)",
-      "Bash(kill 62835 62910)"
+      "Bash(kill 62835 62910)",
+      "Bash(xargs -I{} sh -c 'echo ==={}; cat {}')",
+      "Bash(kill 73966)"
     ]
   }
 }

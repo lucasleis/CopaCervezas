@@ -91,6 +91,34 @@ func (s *Service) GetEdicionesDisponiblesCerveceria(ctx context.Context, usuario
 	return result, nil
 }
 
+func (s *Service) InscribirCerveceria(ctx context.Context, usuarioID, edicionID, orgID uuid.UUID) (db.Cerveceria, error) {
+	if _, err := s.verifyEdicionEnInscripcion(ctx, edicionID, orgID); err != nil {
+		return db.Cerveceria{}, err
+	}
+
+	existente, err := s.getCerveceria(ctx, usuarioID, edicionID, orgID)
+	if err == nil {
+		return existente, nil
+	}
+	if !errors.Is(err, ErrCerveceriaNotFound) {
+		return db.Cerveceria{}, err
+	}
+
+	cerveceria, err := s.queries.InscribirCerveceria(ctx, db.InscribirCerveceriaParams{
+		ID:        uuid.New(),
+		UsuarioID: usuarioID,
+		EdicionID: edicionID,
+		OrgID:     orgID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return s.getCerveceria(ctx, usuarioID, edicionID, orgID)
+		}
+		return db.Cerveceria{}, fmt.Errorf("inscription: inscribir cerveceria: %w", err)
+	}
+	return cerveceria, nil
+}
+
 func (s *Service) ListMuestrasCerveceria(ctx context.Context, usuarioID, edicionID, orgID uuid.UUID) ([]db.ListMuestrasCerveceriaRow, error) {
 	cerveceria, err := s.getCerveceria(ctx, usuarioID, edicionID, orgID)
 	if err != nil {

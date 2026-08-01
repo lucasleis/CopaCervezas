@@ -253,6 +253,37 @@ func (h *Handler) GetEdicionesDisponibles(c echo.Context) error {
 	return respond(c, http.StatusOK, result)
 }
 
+type cerveceriaInscritaResponse struct {
+	ID     string `json:"id"`
+	Estado string `json:"estado"`
+}
+
+func (h *Handler) InscribirCerveceria(c echo.Context) error {
+	if !requireBrewery(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	cerveceria, err := h.svc.InscribirCerveceria(c.Request().Context(), usuarioID, edicionID, orgID)
+	if err != nil {
+		return handleMuestraError(c, err, "inscribir cerveceria failed")
+	}
+	return respond(c, http.StatusCreated, cerveceriaInscritaResponse{
+		ID:     cerveceria.ID.String(),
+		Estado: string(cerveceria.EstadoPago),
+	})
+}
+
 func (h *Handler) ListMuestras(c echo.Context) error {
 	if !requireBrewery(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")

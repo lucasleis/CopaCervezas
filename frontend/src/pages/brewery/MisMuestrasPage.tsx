@@ -10,6 +10,7 @@ import {
   getEdicionesDisponiblesCerveceria,
   getEstilosCatalogo,
   getMuestrasCerveceria,
+  inscribirseEdicion,
   type Muestra,
 } from "@/api/inscripcion";
 import MuestraDialog from "@/components/brewery/MuestraDialog";
@@ -47,10 +48,14 @@ export default function MisMuestrasPage() {
   const [muestraEditando, setMuestraEditando] = useState<Muestra | null>(null);
 
   const {
+    ediciones,
     edicionId,
     isLoading: edicionLoading,
     isError: edicionError,
   } = useEdicionActivaCerveceria();
+
+  const edicionActiva = ediciones.find((e) => e.id === edicionId);
+  const titulo = edicionActiva?.nombre ?? "Mis Muestras";
 
   const {
     data: edicionesDisponibles,
@@ -61,8 +66,19 @@ export default function MisMuestrasPage() {
     enabled: !edicionLoading && !edicionError && !edicionId,
   });
 
-  function handleInscribirme() {
-    toast("Próximamente");
+  const inscribirseMutation = useMutation({
+    mutationFn: (edicionId: string) => inscribirseEdicion(edicionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ediciones-activas-cerveceria"] });
+      queryClient.invalidateQueries({ queryKey: ["ediciones-disponibles-cerveceria"] });
+    },
+    onError: () => {
+      toast.error("No se pudo completar la inscripción. Intentá de nuevo.");
+    },
+  });
+
+  function handleInscribirme(edicionId: string) {
+    inscribirseMutation.mutate(edicionId);
   }
 
   const {
@@ -117,7 +133,7 @@ export default function MisMuestrasPage() {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Mis Muestras</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900">{titulo}</h1>
           {!isLoading && !isError && (
             <p className="text-sm text-neutral-500">
               {activasCount} de {MAX_MUESTRAS} muestras
@@ -163,8 +179,14 @@ export default function MisMuestrasPage() {
                   className="flex items-center justify-between gap-4 px-4 py-3"
                 >
                   <p className="font-medium text-neutral-900">{edicion.nombre}</p>
-                  <Button size="sm" onClick={handleInscribirme}>
-                    Inscribirme
+                  <Button
+                    size="sm"
+                    disabled={inscribirseMutation.isPending}
+                    onClick={() => handleInscribirme(edicion.id)}
+                  >
+                    {inscribirseMutation.isPending && inscribirseMutation.variables === edicion.id
+                      ? "Inscribiendo..."
+                      : "Inscribirme"}
                   </Button>
                 </div>
               ))}

@@ -94,6 +94,13 @@ export async function getEdicionesDisponiblesCerveceria(): Promise<EdicionDispon
   return response.data.data;
 }
 
+export async function inscribirseEdicion(edicionId: string): Promise<{ id: string }> {
+  const response = await apiClient.post<ApiResponse<{ id: string }>>(
+    `/api/v1/cerveceria/ediciones/${edicionId}/inscribirse`
+  );
+  return response.data.data;
+}
+
 export async function getMuestrasCerveceria(edicionId: string): Promise<Muestra[]> {
   const response = await apiClient.get<ApiResponse<Muestra[]>>(
     `/api/v1/cerveceria/ediciones/${edicionId}/muestras`

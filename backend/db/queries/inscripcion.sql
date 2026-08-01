@@ -16,6 +16,14 @@ WHERE e.org_id = $1
   )
 ORDER BY e.created_at DESC;
 
+-- name: InscribirCerveceria :one
+INSERT INTO cervecerias (id, usuario_id, edicion_id, org_id, nombre_comercial, estado_pago)
+SELECT $1, $2, $3, $4, TRIM(CONCAT_WS(' ', u.nombre, u.apellido)), 'pendiente'
+FROM usuarios u
+WHERE u.id = $2
+ON CONFLICT (usuario_id, edicion_id) DO NOTHING
+RETURNING *;
+
 -- name: GetCerveceriaByUsuario :one
 SELECT * FROM cervecerias
 WHERE usuario_id = $1 AND edicion_id = $2 AND org_id = $3;
