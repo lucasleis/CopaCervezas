@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { createEvaluacion, type MuestraVuelo } from "@/api/cata";
-import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -60,6 +59,27 @@ function attrInvalido(attr: AttrValue): boolean {
   return !attr.inapropiado && !attr.valor;
 }
 
+// Opciones cuyo texto se divide en dos líneas dentro del botón por ser largas.
+const OPCIONES_DOS_LINEAS: Record<string, [string, string]> = {
+  "Plenamente Lupulada": ["Plenamente", "Lupulada"],
+  "Plenamente Maltosa": ["Plenamente", "Maltosa"],
+  "No muy representativo": ["No muy", "representativo"],
+  "Muy representativo": ["Muy", "representativo"],
+  "Defectos significativos": ["Defectos", "significativos"],
+  "Muy buena": ["Muy", "buena"],
+};
+
+function OptionLabel({ text }: { text: string }) {
+  const lineas = OPCIONES_DOS_LINEAS[text];
+  if (!lineas) return <>{text}</>;
+  return (
+    <span className="flex flex-col items-center text-center leading-tight">
+      <span>{lineas[0]}</span>
+      <span>{lineas[1]}</span>
+    </span>
+  );
+}
+
 // --- Subcomponentes de UI ---
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -68,7 +88,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <div className="bg-neutral-800 px-3 py-1.5 text-xs font-bold tracking-wide text-white uppercase">
         {title}
       </div>
-      <div className="space-y-3 p-3">{children}</div>
+      <div className="space-y-3 p-2.5">{children}</div>
     </div>
   );
 }
@@ -79,25 +99,27 @@ function AttributeField({
   value,
   onChange,
   error,
+  itemClassName,
 }: {
   label: string;
   options: readonly string[];
   value: AttrValue;
   onChange: (next: AttrValue) => void;
   error?: boolean;
+  itemClassName?: string;
 }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
         <span
           className={cn(
-            "text-[11px] font-bold tracking-wide uppercase",
+            "text-sm font-semibold tracking-wide uppercase",
             error ? "text-red-600" : "text-danger-600"
           )}
         >
           {label}
         </span>
-        <Label htmlFor={`${label}-inapropiado`} className="gap-1.5 text-[10px] text-neutral-500">
+        <Label htmlFor={`${label}-inapropiado`} className="gap-1.5 text-sm text-neutral-500">
           <Checkbox
             id={`${label}-inapropiado`}
             checked={value.inapropiado}
@@ -110,15 +132,23 @@ function AttributeField({
         value={value.valor ? [value.valor] : []}
         onValueChange={(next) => onChange({ valor: next[0] ?? "", inapropiado: false })}
         disabled={value.inapropiado}
-        className={cn(value.inapropiado && "opacity-40")}
+        className={cn(
+          "w-full flex-nowrap overflow-x-auto",
+          value.inapropiado && "opacity-40"
+        )}
       >
         {options.map((opt) => (
           <ToggleGroupItem
             key={opt}
             value={opt}
-            className={cn(error && "border-red-500")}
+            className={cn(
+              "h-auto flex-1 px-1.5 py-2 text-sm",
+              itemClassName,
+              OPCIONES_DOS_LINEAS[opt] && "min-h-[2.5rem]",
+              error && "border-red-500"
+            )}
           >
-            {opt}
+            <OptionLabel text={opt} />
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -144,7 +174,7 @@ function ObservacionesField({
   const words = countWords(value);
   return (
     <div className="space-y-1">
-      <Label className="text-xs font-semibold text-neutral-700">
+      <Label className="text-sm font-medium text-neutral-700">
         {label} {!optional && <span className="text-red-500">*</span>}
       </Label>
       <Textarea
@@ -155,7 +185,7 @@ function ObservacionesField({
         className="text-xs"
       />
       {!optional && (
-        <p className={cn("text-[10px]", error ? "text-sm text-destructive" : "text-neutral-400")}>
+        <p className={cn("text-sm", error ? "text-destructive" : "text-neutral-400")}>
           {words}/{minWords} palabras mínimo
         </p>
       )}
@@ -168,22 +198,38 @@ function RadioRow({
   value,
   onChange,
   error,
+  itemClassName,
+  groupClassName,
 }: {
   options: readonly string[];
   value: string;
   onChange: (next: string) => void;
   error?: boolean;
+  itemClassName?: string;
+  groupClassName?: string;
 }) {
   return (
     <div className="space-y-1">
       <ToggleGroup
         value={value ? [value] : []}
         onValueChange={(next) => onChange(next[0] ?? "")}
-        className={cn(error && "rounded-md ring-1 ring-red-300")}
+        className={cn(
+          "w-full flex-nowrap overflow-x-auto",
+          groupClassName,
+          error && "rounded-md ring-1 ring-red-300"
+        )}
       >
         {options.map((opt) => (
-          <ToggleGroupItem key={opt} value={opt}>
-            {opt}
+          <ToggleGroupItem
+            key={opt}
+            value={opt}
+            className={cn(
+              "h-auto flex-1 px-1.5 py-2 text-sm",
+              itemClassName,
+              OPCIONES_DOS_LINEAS[opt] && "min-h-[2.5rem]"
+            )}
+          >
+            <OptionLabel text={opt} />
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -200,7 +246,6 @@ export default function EvaluacionForm({
   onSuccess,
 }: Props) {
   const queryClient = useQueryClient();
-  const { role } = useAuth();
 
   const [aparienciaObs, setAparienciaObs] = useState("");
 
@@ -395,20 +440,26 @@ export default function EvaluacionForm({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900">
-          Evaluar muestra {muestra.cod_anonimo}
-        </h2>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
-          <span>
-            Juez: <span className="font-medium text-neutral-700">{juezEmail ?? role}</span>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
+          {juezEmail && (
+            <span className="flex items-center gap-1">
+              <span className="text-neutral-500">Juez:</span>
+              <span className="font-medium text-neutral-900">{juezEmail}</span>
+            </span>
+          )}
+          <span className="hidden text-neutral-300 sm:inline">·</span>
+          <span className="flex items-center gap-1">
+            <span className="text-neutral-500">Código anónimo:</span>
+            {muestra.cod_anonimo ? (
+              <span className="font-medium text-neutral-900">{muestra.cod_anonimo}</span>
+            ) : (
+              <span className="font-medium text-neutral-400">Sin código</span>
+            )}
           </span>
-          <span>
-            Código anónimo:{" "}
-            <span className="font-medium text-neutral-700">{muestra.cod_anonimo}</span>
-          </span>
-          <span>
-            Estilo:{" "}
-            <span className="font-medium text-neutral-700">
+          <span className="hidden text-neutral-300 sm:inline">·</span>
+          <span className="flex items-center gap-1">
+            <span className="text-neutral-500">Estilo:</span>
+            <span className="font-medium text-neutral-900">
               {muestra.estilo_codigo} — {muestra.estilo_nombre}
             </span>
           </span>
@@ -513,6 +564,7 @@ export default function EvaluacionForm({
               value={saborAttrs.balance}
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, balance: v }))}
               error={mostrarError("saborBalance")}
+              itemClassName="h-14 px-1 text-sm"
             />
             <ObservacionesField
               label="Observaciones"
@@ -571,7 +623,7 @@ export default function EvaluacionForm({
         <div className="flex flex-col gap-4">
           <Section title="General">
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700">
                 Calidad técnica <span className="text-red-500">*</span>
               </span>
               <RadioRow
@@ -579,10 +631,11 @@ export default function EvaluacionForm({
                 value={calidadTecnica}
                 onChange={setCalidadTecnica}
                 error={mostrarError("calidadTecnica")}
+                itemClassName="h-14 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700">
                 Mérito estilístico <span className="text-red-500">*</span>
               </span>
               <RadioRow
@@ -590,10 +643,11 @@ export default function EvaluacionForm({
                 value={meritoEstilistico}
                 onChange={setMeritoEstilistico}
                 error={mostrarError("meritoEstilistico")}
+                itemClassName="h-14 px-1 text-sm"
               />
             </div>
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700">
                 Fuerza relativa dentro del vuelo <span className="text-red-500">*</span>
               </span>
               <RadioRow
@@ -601,6 +655,8 @@ export default function EvaluacionForm({
                 value={fuerzaRelativa === null ? "" : String(fuerzaRelativa)}
                 onChange={(v) => setFuerzaRelativa(Number(v))}
                 error={mostrarError("fuerzaRelativa")}
+                groupClassName="gap-2"
+                itemClassName="py-3 text-base font-semibold"
               />
             </div>
           </Section>
@@ -614,23 +670,26 @@ export default function EvaluacionForm({
               error={mostrarError("devolucionObs")}
             />
             <div className="space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">
+              <span className="text-sm font-medium text-neutral-700">
                 ¿Avanza a la siguiente ronda? <span className="text-red-500">*</span>
               </span>
               <ToggleGroup
                 value={avanza === null ? [] : [avanza ? "si" : "no"]}
                 onValueChange={(next) => setAvanza(next[0] === "si")}
-                className={cn(mostrarError("avanza") && "rounded-md ring-1 ring-red-300")}
+                className={cn(
+                  "w-full flex-nowrap",
+                  mostrarError("avanza") && "rounded-md ring-1 ring-red-300"
+                )}
               >
                 <ToggleGroupItem
                   value="si"
-                  className="flex-1 data-[pressed]:border-success-500 data-[pressed]:bg-success-500"
+                  className="h-auto flex-1 py-2 text-sm data-[pressed]:border-success-500 data-[pressed]:bg-success-500"
                 >
                   SÍ
                 </ToggleGroupItem>
                 <ToggleGroupItem
                   value="no"
-                  className="flex-1 data-[pressed]:border-danger-500 data-[pressed]:bg-danger-500"
+                  className="h-auto flex-1 py-2 text-sm data-[pressed]:border-danger-500 data-[pressed]:bg-danger-500"
                 >
                   NO
                 </ToggleGroupItem>

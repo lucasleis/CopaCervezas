@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Info, X } from "lucide-react";
 import {
   getVuelosJuez,
   getMuestrasVuelo,
@@ -72,6 +72,7 @@ export default function VueloEvaluacionPage() {
   );
 
   const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [bannerVisible, setBannerVisible] = useState(true);
 
   useEffect(() => {
     if (activeTab !== null) return;
@@ -99,6 +100,23 @@ export default function VueloEvaluacionPage() {
 
   return (
     <div className="p-8">
+      {bannerVisible && (
+        <div className="mb-6 flex items-center gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-2.5 text-sm text-primary-700">
+          <Info className="size-4 shrink-0" aria-hidden="true" />
+          <span className="flex-1">
+            Para mejor experiencia, usá pantalla completa (F11)
+          </span>
+          <button
+            type="button"
+            onClick={() => setBannerVisible(false)}
+            aria-label="Cerrar aviso"
+            className="shrink-0 rounded p-0.5 text-primary-700 hover:bg-primary-100"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
         <Button variant="ghost" size="sm" onClick={() => navigate("/cata")}>
           <ArrowLeft className="size-4" aria-hidden="true" />
