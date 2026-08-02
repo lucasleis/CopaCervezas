@@ -181,7 +181,9 @@
       "Bash(gofmt -w internal/inscription/handler.go internal/inscription/service.go cmd/server/main.go)",
       "Bash(ps -o pid,lstart,cmd -p 77018)",
       "Bash(echo \"exit=$?\")",
-      "Bash(pkill -f \"/tmp/nivalis-server\")"
+      "Bash(pkill -f \"/tmp/nivalis-server\")",
+      "Bash(xargs -I{} sh -c 'echo ---{}; cat {}')",
+      "Bash(gofmt -w internal/auth/handler.go)"
     ]
   }
 }

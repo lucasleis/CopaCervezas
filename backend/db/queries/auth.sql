@@ -4,6 +4,9 @@ FROM usuarios
 WHERE email = $1
 LIMIT 1;
 
+-- name: GetUsuarioByID :one
+SELECT id, email, password_hash FROM usuarios WHERE id = $1;
+
 -- name: GetRolesByUsuario :many
 SELECT org_id, rol
 FROM usuario_organizacion

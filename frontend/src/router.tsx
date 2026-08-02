@@ -10,7 +10,7 @@ import EdicionesPage from "@/pages/admin/EdicionesPage";
 import EdicionDetailPage from "@/pages/admin/EdicionDetailPage";
 import CataLivePage from "@/pages/admin/CataLivePage";
 import CataPage from "@/pages/juez/CataPage";
-import VueloPanelPage from "@/pages/juez/VueloPanelPage";
+import VueloEvaluacionPage from "@/pages/juez/VueloEvaluacionPage";
 import MisMuestrasPage from "@/pages/brewery/MisMuestrasPage";
 import MisMuestrasEdicionPage from "@/pages/brewery/MisMuestrasEdicionPage";
 import CompetenciaDetallePage from "@/pages/brewery/CompetenciaDetallePage";
@@ -99,7 +99,7 @@ export default function AppRouter() {
         path="/cata/:vuelo_id"
         element={
           <ProtectedRoute requiredRole="judge">
-            <VueloPanelPage />
+            <VueloEvaluacionPage />
           </ProtectedRoute>
         }
       />

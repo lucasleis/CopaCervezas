@@ -227,7 +227,12 @@ func (h *Handler) SelectOrg(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "sin acceso a esta organización")
 	}
 
-	res, err := h.issueTokens(c, usuarioID, orgID, matchedRol, "")
+	usuario, err := h.queries.GetUsuarioByID(c.Request().Context(), usuarioID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
+	}
+
+	res, err := h.issueTokens(c, usuarioID, orgID, matchedRol, usuario.Email)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
@@ -284,7 +289,12 @@ func (h *Handler) Refresh(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "sin rol para esta organización")
 	}
 
-	res, err := h.issueTokens(c, rt.UsuarioID, rt.OrgID, rol, "")
+	usuario, err := h.queries.GetUsuarioByID(c.Request().Context(), rt.UsuarioID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
+	}
+
+	res, err := h.issueTokens(c, rt.UsuarioID, rt.OrgID, rol, usuario.Email)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
