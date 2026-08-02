@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ArrowLeft, CheckCircle2, CircleDashed, CircleSlash, PlusCircle } from "lucide-react";
 import { useEdicionActivaCerveceria } from "@/hooks/useEdicionActivaCerveceria";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,21 +24,24 @@ const UUID_REGEX =
 function EstadoBadge({ muestra }: { muestra: Muestra }) {
   if (!muestra.activa) {
     return (
-      <span className="inline-flex items-center rounded-full bg-neutral-200 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-neutral-600">
+      <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-500">
+        <CircleSlash className="size-3.5" aria-hidden="true" />
         Inactiva
       </span>
     );
   }
   if (muestra.aprobada) {
     return (
-      <span className="inline-flex items-center rounded-full bg-success-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-success-700">
-        ✓ Aprobada
+      <span className="inline-flex items-center gap-1 rounded-full bg-success-100 px-2.5 py-1 text-xs font-semibold text-success-700">
+        <CheckCircle2 className="size-3.5" aria-hidden="true" />
+        Aprobada
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-warning-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-warning-700">
-      Pendiente de aprobación
+    <span className="inline-flex items-center gap-1 rounded-full bg-warning-100 px-2.5 py-1 text-xs font-semibold text-warning-700">
+      <CircleDashed className="size-3.5" aria-hidden="true" />
+      Pendiente
     </span>
   );
 }
@@ -115,98 +119,123 @@ export default function MisMuestrasEdicionPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <button
-            type="button"
-            onClick={() => navigate("/mis-muestras")}
-            className="mb-1 text-sm text-neutral-600 hover:text-neutral-900"
-          >
-            ← Volver
-          </button>
-          <h1 className="text-2xl font-semibold text-neutral-900">{titulo}</h1>
-          {!isLoading && !isError && (
-            <p className="text-sm text-neutral-500">
-              {activasCount} de {MAX_MUESTRAS} muestras
-            </p>
-          )}
-        </div>
-        <Button onClick={handleNuevaMuestra}>Inscribir cerveza</Button>
-      </div>
+    <div className="min-h-full bg-white">
+      <div className="mx-auto max-w-4xl px-6 py-10 sm:px-8">
+        <button
+          type="button"
+          onClick={() => navigate("/mis-muestras")}
+          className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Volver
+        </button>
 
-      {isLoading && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2 rounded-lg border border-neutral-200 p-4">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-40" />
-              <Skeleton className="h-7 w-24" />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudieron cargar tus muestras.
-        </div>
-      )}
-
-      {!isLoading && !isError && muestras?.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          No tenés cervezas inscriptas todavía.
-        </div>
-      )}
-
-      {!isLoading && !isError && muestras && muestras.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {muestras.map((muestra) => (
-            <div
-              key={muestra.id}
-              className="flex flex-col gap-2.5 rounded-lg border border-neutral-200 bg-white p-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-semibold text-neutral-900">{muestra.nombre_comercial}</p>
-                <EstadoBadge muestra={muestra} />
-              </div>
-              <p className="text-sm text-neutral-500">
-                {muestra.estilo_codigo} — {muestra.estilo_nombre}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">{titulo}</h1>
+            {!isLoading && !isError && (
+              <p className="mt-1 text-sm text-neutral-500">
+                {activasCount} de {MAX_MUESTRAS} muestras
               </p>
-              <div className="mt-auto flex gap-2 pt-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={!muestra.activa}
-                  onClick={() => handleEditar(muestra)}
-                >
-                  Editar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  disabled={!muestra.activa || deleteMutation.isPending}
-                  onClick={() => handleDelete(muestra)}
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </div>
-          ))}
+            )}
+          </div>
+          <Button onClick={handleNuevaMuestra} className="shrink-0">
+            <PlusCircle className="size-4" aria-hidden="true" />
+            Inscribir cerveza
+          </Button>
         </div>
-      )}
 
-      <MuestraDialog
-        key={muestraEditando?.id ?? "new"}
-        open={dialogOpen}
-        onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) setMuestraEditando(null);
-        }}
-        edicionId={edicionId}
-        estilos={estilos ?? []}
-        muestraExistente={muestraEditando}
-      />
+        {isLoading && (
+          <div className="flex flex-col gap-4">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="flex w-full items-center justify-between gap-4 rounded-xl border border-neutral-200 p-5"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                  <Skeleton className="h-4 w-36" />
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <div role="alert" className="rounded-xl border border-danger-100 bg-danger-50 px-6 py-12 text-center">
+            <p className="text-sm font-medium text-danger-700">No se pudieron cargar tus muestras</p>
+            <p className="mt-1 text-sm text-neutral-600">Intentá de nuevo en unos instantes.</p>
+          </div>
+        )}
+
+        {!isLoading && !isError && muestras?.length === 0 && (
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-dashed border-neutral-300 px-6 py-16 text-center">
+            <p className="text-sm text-neutral-500">No tenés cervezas inscriptas todavía.</p>
+            <Button onClick={handleNuevaMuestra}>
+              <PlusCircle className="size-4" aria-hidden="true" />
+              Inscribir cerveza
+            </Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && muestras && muestras.length > 0 && (
+          <div className="flex flex-col gap-4">
+            {muestras.map((muestra) => (
+              <div
+                key={muestra.id}
+                className="flex w-full flex-col gap-4 rounded-xl border border-neutral-200 p-5 transition-shadow hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-neutral-900">{muestra.nombre_comercial}</p>
+                    <EstadoBadge muestra={muestra} />
+                  </div>
+                  <p className="text-sm text-neutral-500">
+                    {muestra.estilo_codigo} — {muestra.estilo_nombre}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!muestra.activa}
+                    onClick={() => handleEditar(muestra)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={!muestra.activa || deleteMutation.isPending}
+                    onClick={() => handleDelete(muestra)}
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <MuestraDialog
+          key={muestraEditando?.id ?? "new"}
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setMuestraEditando(null);
+          }}
+          edicionId={edicionId}
+          estilos={estilos ?? []}
+          muestraExistente={muestraEditando}
+        />
+      </div>
     </div>
   );
 }
