@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { useEdicionActivaCerveceria } from "@/hooks/useEdicionActivaCerveceria";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getEdicionesDisponiblesCerveceria } from "@/api/inscripcion";
 
 export default function MisMuestrasPage() {
-  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -43,15 +41,8 @@ export default function MisMuestrasPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6">
         <h1 className="text-2xl font-semibold text-neutral-900">Mis Muestras</h1>
-        <button
-          type="button"
-          onClick={logout}
-          className="text-sm text-neutral-600 hover:text-neutral-900"
-        >
-          Cerrar sesión
-        </button>
       </div>
 
       {isLoading && (

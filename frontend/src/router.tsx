@@ -5,6 +5,7 @@ import type { Role } from "@/api/auth";
 import LoginPage from "@/pages/LoginPage";
 import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
+import BreweryLayout from "@/components/BreweryLayout";
 import EdicionesPage from "@/pages/admin/EdicionesPage";
 import EdicionDetailPage from "@/pages/admin/EdicionDetailPage";
 import CataLivePage from "@/pages/admin/CataLivePage";
@@ -106,7 +107,9 @@ export default function AppRouter() {
         path="/mis-muestras"
         element={
           <ProtectedRoute requiredRole="brewery">
-            <MisMuestrasPage />
+            <BreweryLayout>
+              <MisMuestrasPage />
+            </BreweryLayout>
           </ProtectedRoute>
         }
       />
@@ -114,7 +117,9 @@ export default function AppRouter() {
         path="/mis-muestras/competencia/:edicion_id"
         element={
           <ProtectedRoute requiredRole="brewery">
-            <CompetenciaDetallePage />
+            <BreweryLayout>
+              <CompetenciaDetallePage />
+            </BreweryLayout>
           </ProtectedRoute>
         }
       />
@@ -122,7 +127,9 @@ export default function AppRouter() {
         path="/mis-muestras/:edicion_id"
         element={
           <ProtectedRoute requiredRole="brewery">
-            <MisMuestrasEdicionPage />
+            <BreweryLayout>
+              <MisMuestrasEdicionPage />
+            </BreweryLayout>
           </ProtectedRoute>
         }
       />
