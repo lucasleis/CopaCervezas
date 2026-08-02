@@ -245,3 +245,5 @@ npm run build
 
 to kill procces in port X
 fuser -k 5173/tcp
+
+clear && fuser -k 8080/tcp && cd /mnt/c/Users/lucas/Codigos/CopaCervezas/backend && go run ./cmd/server

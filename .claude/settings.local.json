@@ -176,7 +176,12 @@
       "Bash(gofmt -w internal/inscription/handler.go internal/inscription/service.go)",
       "Bash(kill 62835 62910)",
       "Bash(xargs -I{} sh -c 'echo ==={}; cat {}')",
-      "Bash(kill 73966)"
+      "Bash(kill 73966)",
+      "Bash(npx eslint *)",
+      "Bash(gofmt -w internal/inscription/handler.go internal/inscription/service.go cmd/server/main.go)",
+      "Bash(ps -o pid,lstart,cmd -p 77018)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(pkill -f \"/tmp/nivalis-server\")"
     ]
   }
 }

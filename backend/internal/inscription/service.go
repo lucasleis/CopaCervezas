@@ -37,6 +37,9 @@ var ErrMuestraNotFound = errors.New("inscription: la muestra solicitada no exist
 // ErrCerveceriaNotFoundByID se retorna cuando la cervecería no existe para la org del JWT.
 var ErrCerveceriaNotFoundByID = errors.New("inscription: la cervecería solicitada no existe")
 
+// ErrYaInscripto se retorna cuando el usuario ya tiene una cervecería registrada en la edición.
+var ErrYaInscripto = errors.New("inscription: ya estás inscripto en esta edición")
+
 // ErrInfoAdicionalIncompleta se retorna cuando faltan claves obligatorias del schema del estilo.
 type ErrInfoAdicionalIncompleta struct {
 	Faltantes []string
@@ -89,6 +92,43 @@ func (s *Service) GetEdicionesDisponiblesCerveceria(ctx context.Context, usuario
 		return nil, fmt.Errorf("inscription: get ediciones disponibles cerveceria: %w", err)
 	}
 	return result, nil
+}
+
+type EdicionDisponibleDetalle struct {
+	Edicion db.GetEdicionDisponibleDetalleRow
+	Precios []db.PreciosInscripcion
+	Lugares []db.LugaresEntrega
+}
+
+func (s *Service) GetEdicionDisponibleDetalle(ctx context.Context, usuarioID, orgID, edicionID uuid.UUID) (EdicionDisponibleDetalle, error) {
+	edicion, err := s.queries.GetEdicionDisponibleDetalle(ctx, db.GetEdicionDisponibleDetalleParams{
+		OrgID: orgID,
+		ID:    edicionID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return EdicionDisponibleDetalle{}, ErrEdicionNotFound
+		}
+		return EdicionDisponibleDetalle{}, fmt.Errorf("inscription: get edicion disponible detalle: %w", err)
+	}
+
+	if _, err := s.getCerveceria(ctx, usuarioID, edicionID, orgID); err == nil {
+		return EdicionDisponibleDetalle{}, ErrYaInscripto
+	} else if !errors.Is(err, ErrCerveceriaNotFound) {
+		return EdicionDisponibleDetalle{}, err
+	}
+
+	precios, err := s.queries.ListPreciosByEdicion(ctx, edicionID)
+	if err != nil {
+		return EdicionDisponibleDetalle{}, fmt.Errorf("inscription: list precios edicion: %w", err)
+	}
+
+	lugares, err := s.queries.ListLugaresByEdicion(ctx, edicionID)
+	if err != nil {
+		return EdicionDisponibleDetalle{}, fmt.Errorf("inscription: list lugares edicion: %w", err)
+	}
+
+	return EdicionDisponibleDetalle{Edicion: edicion, Precios: precios, Lugares: lugares}, nil
 }
 
 func (s *Service) InscribirCerveceria(ctx context.Context, usuarioID, edicionID, orgID uuid.UUID) (db.Cerveceria, error) {

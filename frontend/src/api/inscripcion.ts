@@ -54,6 +54,35 @@ export interface EdicionDisponible {
   fecha_evento: string | null;
 }
 
+export interface PrecioInscripcion {
+  id: string;
+  nombre: string;
+  precio: string;
+  fecha_desde: string | null;
+  fecha_hasta: string | null;
+}
+
+export interface LugarEntrega {
+  id: string;
+  nombre: string;
+  direccion: string;
+  ciudad: string;
+  provincia: string;
+  horarios: string | null;
+}
+
+export interface EdicionDisponibleDetalle {
+  id: string;
+  nombre: string;
+  anio: number;
+  fecha_inicio_inscripcion: string | null;
+  fecha_fin_inscripcion: string | null;
+  fecha_evento: string | null;
+  max_muestras_por_cerveceria: number;
+  precios: PrecioInscripcion[];
+  lugares: LugarEntrega[];
+}
+
 export type EstadoPago = "pendiente" | "pagado";
 
 export interface MuestraAdmin {
@@ -90,6 +119,15 @@ export async function getEdicionesActivasCerveceria(): Promise<EdicionCerveceria
 export async function getEdicionesDisponiblesCerveceria(): Promise<EdicionDisponible[]> {
   const response = await apiClient.get<ApiResponse<EdicionDisponible[]>>(
     "/api/v1/cerveceria/ediciones/disponibles"
+  );
+  return response.data.data;
+}
+
+export async function getEdicionDisponibleDetalle(
+  edicionId: string
+): Promise<EdicionDisponibleDetalle> {
+  const response = await apiClient.get<ApiResponse<EdicionDisponibleDetalle>>(
+    `/api/v1/cerveceria/ediciones/disponibles/${edicionId}`
   );
   return response.data.data;
 }

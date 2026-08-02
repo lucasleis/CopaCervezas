@@ -16,6 +16,11 @@ WHERE e.org_id = $1
   )
 ORDER BY e.created_at DESC;
 
+-- name: GetEdicionDisponibleDetalle :one
+SELECT e.id, e.nombre, e.anio, e.fecha_inicio_inscripcion, e.fecha_fin_inscripcion, e.fecha_evento, e.max_muestras_por_cerveceria
+FROM ediciones e
+WHERE e.org_id = $1 AND e.id = $2 AND e.estado = 'inscripcion';
+
 -- name: InscribirCerveceria :one
 INSERT INTO cervecerias (id, usuario_id, edicion_id, org_id, nombre_comercial, estado_pago)
 SELECT $1, $2, $3, $4, TRIM(CONCAT_WS(' ', u.nombre, u.apellido)), 'pendiente'

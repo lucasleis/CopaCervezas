@@ -159,6 +159,9 @@ func handleMuestraError(c echo.Context, err error, logMsg string) error {
 	if errors.Is(err, ErrCerveceriaNotFound) {
 		return fail(c, http.StatusNotFound, "CERVECERIA_NOT_FOUND", "No existe una cervecería para este usuario en esta edición")
 	}
+	if errors.Is(err, ErrYaInscripto) {
+		return fail(c, http.StatusConflict, "YA_INSCRIPTO", "Ya estás inscripto en esta edición")
+	}
 	if errors.Is(err, ErrMaxMuestrasAlcanzado) {
 		return fail(c, http.StatusUnprocessableEntity, "MAX_MUESTRAS_ALCANZADO", "Se alcanzó el máximo de muestras permitidas para esta cervecería")
 	}
@@ -251,6 +254,95 @@ func (h *Handler) GetEdicionesDisponibles(c echo.Context) error {
 		}
 	}
 	return respond(c, http.StatusOK, result)
+}
+
+type precioInscripcionResponse struct {
+	ID         string  `json:"id"`
+	Nombre     string  `json:"nombre"`
+	Precio     string  `json:"precio"`
+	FechaDesde *string `json:"fecha_desde"`
+	FechaHasta *string `json:"fecha_hasta"`
+}
+
+type lugarEntregaResponse struct {
+	ID        string  `json:"id"`
+	Nombre    string  `json:"nombre"`
+	Direccion string  `json:"direccion"`
+	Ciudad    string  `json:"ciudad"`
+	Provincia string  `json:"provincia"`
+	Horarios  *string `json:"horarios"`
+}
+
+type edicionDisponibleDetalleResponse struct {
+	ID                       string                      `json:"id"`
+	Nombre                   string                      `json:"nombre"`
+	Anio                     int32                       `json:"anio"`
+	FechaInicioInscripcion   *string                     `json:"fecha_inicio_inscripcion"`
+	FechaFinInscripcion      *string                     `json:"fecha_fin_inscripcion"`
+	FechaEvento              *string                     `json:"fecha_evento"`
+	MaxMuestrasPorCerveceria int32                       `json:"max_muestras_por_cerveceria"`
+	Precios                  []precioInscripcionResponse `json:"precios"`
+	Lugares                  []lugarEntregaResponse      `json:"lugares"`
+}
+
+func (h *Handler) GetEdicionDisponibleDetalle(c echo.Context) error {
+	if !requireBrewery(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	detalle, err := h.svc.GetEdicionDisponibleDetalle(c.Request().Context(), usuarioID, orgID, edicionID)
+	if err != nil {
+		return handleMuestraError(c, err, "get edicion disponible detalle failed")
+	}
+
+	precios := make([]precioInscripcionResponse, len(detalle.Precios))
+	for i, p := range detalle.Precios {
+		precios[i] = precioInscripcionResponse{
+			ID:         p.ID.String(),
+			Nombre:     p.Nombre,
+			Precio:     p.Precio,
+			FechaDesde: formatNullTime(p.FechaDesde),
+			FechaHasta: formatNullTime(p.FechaHasta),
+		}
+	}
+
+	lugares := make([]lugarEntregaResponse, len(detalle.Lugares))
+	for i, l := range detalle.Lugares {
+		item := lugarEntregaResponse{
+			ID:        l.ID.String(),
+			Nombre:    l.Nombre,
+			Direccion: l.Direccion,
+			Ciudad:    l.Ciudad,
+			Provincia: l.Provincia,
+		}
+		if l.Horarios.Valid {
+			item.Horarios = &l.Horarios.String
+		}
+		lugares[i] = item
+	}
+
+	return respond(c, http.StatusOK, edicionDisponibleDetalleResponse{
+		ID:                       detalle.Edicion.ID.String(),
+		Nombre:                   detalle.Edicion.Nombre,
+		Anio:                     detalle.Edicion.Anio,
+		FechaInicioInscripcion:   formatNullTime(detalle.Edicion.FechaInicioInscripcion),
+		FechaFinInscripcion:      formatNullTime(detalle.Edicion.FechaFinInscripcion),
+		FechaEvento:              formatNullTime(detalle.Edicion.FechaEvento),
+		MaxMuestrasPorCerveceria: detalle.Edicion.MaxMuestrasPorCerveceria,
+		Precios:                  precios,
+		Lugares:                  lugares,
+	})
 }
 
 type cerveceriaInscritaResponse struct {

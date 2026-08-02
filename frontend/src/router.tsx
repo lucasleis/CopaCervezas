@@ -11,6 +11,8 @@ import CataLivePage from "@/pages/admin/CataLivePage";
 import CataPage from "@/pages/juez/CataPage";
 import VueloPanelPage from "@/pages/juez/VueloPanelPage";
 import MisMuestrasPage from "@/pages/brewery/MisMuestrasPage";
+import MisMuestrasEdicionPage from "@/pages/brewery/MisMuestrasEdicionPage";
+import CompetenciaDetallePage from "@/pages/brewery/CompetenciaDetallePage";
 import EstilosPage from "@/pages/admin/EstilosPage";
 import InscriptosPage from "@/pages/admin/InscriptosPage";
 import GruposPage from "@/pages/admin/GruposPage";
@@ -105,6 +107,22 @@ export default function AppRouter() {
         element={
           <ProtectedRoute requiredRole="brewery">
             <MisMuestrasPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mis-muestras/competencia/:edicion_id"
+        element={
+          <ProtectedRoute requiredRole="brewery">
+            <CompetenciaDetallePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/mis-muestras/:edicion_id"
+        element={
+          <ProtectedRoute requiredRole="brewery">
+            <MisMuestrasEdicionPage />
           </ProtectedRoute>
         }
       />
