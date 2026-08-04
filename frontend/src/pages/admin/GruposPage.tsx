@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -532,10 +533,14 @@ export default function GruposPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => navigate(`/admin/ediciones/${edicionId}`)}>
-          ← Volver
-        </Button>
+      <div>
+        <button
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 font-semibold hover:bg-gray-100 transition-colors cursor-pointer mb-2"
+          onClick={() => navigate("/admin/ediciones")}
+        >
+          <ArrowLeft size={16} />
+          Ediciones
+        </button>
         <h1 className="text-2xl font-semibold text-neutral-900">Agrupación de muestras</h1>
       </div>
 
