@@ -141,7 +141,18 @@ export default function EstiloDialog({
     onOpenChange(next);
   }
 
-  const opcionesSubestilo = estilos.filter((e) => e.id !== estiloExistente?.id);
+  const opcionesSubestilo = estilos
+    .filter((e) => e.id !== estiloExistente?.id)
+    .sort((a, b) => a.codigo.localeCompare(b.codigo, undefined, { numeric: true, sensitivity: "base" }));
+
+  const subestiloQuery = busquedaSubestilo.trim().toLowerCase();
+  const opcionesSubestiloFiltradas = subestiloQuery
+    ? opcionesSubestilo.filter(
+        (e) =>
+          e.codigo.toLowerCase().includes(subestiloQuery) ||
+          e.nombre.toLowerCase().includes(subestiloQuery)
+      )
+    : opcionesSubestilo;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -150,7 +161,7 @@ export default function EstiloDialog({
           <DialogTitle>{isEdit ? "Editar estilo" : "Crear estilo"}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 mt-4">
           {similar && (
             <div className="space-y-2 rounded-lg border border-warning-200 bg-warning-50 p-3">
               <p className="text-sm text-warning-800">
@@ -169,7 +180,7 @@ export default function EstiloDialog({
           )}
 
           <div className="space-y-1.5">
-            <label htmlFor="codigo" className="text-sm font-medium text-neutral-700">
+            <label htmlFor="codigo" className="mb-1 text-sm font-medium text-neutral-700">
               Código <span className="text-red-500">*</span>
             </label>
             <Input
@@ -190,7 +201,7 @@ export default function EstiloDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="nombre" className="text-sm font-medium text-neutral-700">
+            <label htmlFor="nombre" className="mb-1 text-sm font-medium text-neutral-700">
               Nombre <span className="text-red-500">*</span>
             </label>
             <Input
@@ -207,7 +218,7 @@ export default function EstiloDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-neutral-700">Subestilo de</label>
+            <label className="mb-1 text-sm font-medium text-neutral-700">Subestilo de</label>
             <Input
               placeholder="Buscar estilo..."
               value={busquedaSubestilo || (subestiloDe ? (opcionesSubestilo.find(e => e.id === subestiloDe) ? `${opcionesSubestilo.find(e => e.id === subestiloDe)!.codigo} - ${opcionesSubestilo.find(e => e.id === subestiloDe)!.nombre}` : "") : "")}
@@ -227,11 +238,7 @@ export default function EstiloDialog({
                 >
                   Ninguno
                 </button>
-                {opcionesSubestilo
-                  .filter(e =>
-                    `${e.codigo} ${e.nombre}`.toLowerCase().includes(busquedaSubestilo.toLowerCase())
-                  )
-                  .slice(0, 20)
+                {opcionesSubestiloFiltradas
                   .map(e => (
                     <button
                       key={e.id}
@@ -248,9 +255,7 @@ export default function EstiloDialog({
                     </button>
                   ))
                 }
-                {opcionesSubestilo.filter(e =>
-                  `${e.codigo} ${e.nombre}`.toLowerCase().includes(busquedaSubestilo.toLowerCase())
-                ).length === 0 && (
+                {opcionesSubestiloFiltradas.length === 0 && (
                   <div className="px-3 py-2 text-sm text-neutral-400">Sin resultados</div>
                 )}
               </div>

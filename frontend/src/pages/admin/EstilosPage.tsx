@@ -147,9 +147,13 @@ export default function EstilosPage() {
 
   const hayBusqueda = busqueda.trim().length > 0;
 
+  const estilosOrdenados = [...(estilos ?? [])].sort((a, b) =>
+    a.codigo.localeCompare(b.codigo, undefined, { numeric: true, sensitivity: 'base' })
+  );
+
   const filas = (() => {
-    if (!hayBusqueda) return buildTree(estilos ?? []);
-    const todos = estilos ?? [];
+    if (!hayBusqueda) return buildTree(estilosOrdenados);
+    const todos = estilosOrdenados;
     const busquedaLower = busqueda.toLowerCase();
     // IDs que matchean directamente
     const matchIds = new Set(
