@@ -183,7 +183,8 @@
       "Bash(echo \"exit=$?\")",
       "Bash(pkill -f \"/tmp/nivalis-server\")",
       "Bash(xargs -I{} sh -c 'echo ---{}; cat {}')",
-      "Bash(gofmt -w internal/auth/handler.go)"
+      "Bash(gofmt -w internal/auth/handler.go)",
+      "Bash(npx --prefix frontend tsc --noEmit -p frontend/tsconfig.app.json)"
     ]
   }
 }

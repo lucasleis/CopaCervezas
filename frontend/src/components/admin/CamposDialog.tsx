@@ -46,6 +46,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
   const [tipo, setTipo] = useState<CampoDefinicion["tipo"]>("text");
   const [obligatorio, setObligatorio] = useState(false);
   const [claveError, setClaveError] = useState<string | null>(null);
+  const [claveTouched, setClaveTouched] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [campoAEliminar, setCampoAEliminar] = useState<string | null>(null);
 
@@ -55,12 +56,14 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
     setTipo("text");
     setObligatorio(false);
     setClaveError(null);
+    setClaveTouched(false);
   }
 
   function handleAgregarCampo() {
+    setClaveTouched(true);
     setClaveError(null);
     if (!clave.trim() || !CLAVE_REGEX.test(clave.trim())) {
-      setClaveError("Debe ser snake_case: solo minúsculas, números y guiones bajos, empezando con una letra.");
+      setClaveError("Solo minúsculas, números y guiones bajos. Debe empezar con una letra. Ej: color_base");
       return;
     }
     if (!label.trim()) {
@@ -199,7 +202,11 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                 <label className="text-xs font-medium text-neutral-700">Clave</label>
                 <Input
                   value={clave}
-                  onChange={(e) => setClave(e.target.value)}
+                  onChange={(e) => {
+                    setClave(e.target.value);
+                    setClaveTouched(true);
+                  }}
+                  onBlur={() => setClaveTouched(true)}
                   placeholder="ej: variedades_lupulo"
                 />
               </div>
@@ -236,7 +243,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                 </label>
               </div>
             </div>
-            {claveError && <p className="text-xs text-red-500">{claveError}</p>}
+            {claveError && claveTouched && <p className="text-xs text-red-500">{claveError}</p>}
             <Button type="button" size="sm" variant="outline" onClick={handleAgregarCampo}>
               Agregar campo
             </Button>
