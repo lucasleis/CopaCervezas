@@ -804,6 +804,44 @@ export default function EdicionDetailPage() {
           </div>
         </section>
       )}
+
+      <section className="rounded-lg border border-neutral-200 bg-white p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Inscriptos</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              Revisá y gestioná las muestras recibidas de las cervecerías participantes.
+            </p>
+          </div>
+          <Button
+            variant="default"
+            onClick={() => navigate(`/admin/ediciones/${edicion.id}/inscripcion`)}
+            className="w-[132px]"
+          >
+            Ver inscriptos →
+          </Button>
+        </div>
+      </section>
+
+      {edicion.estado === "cata" && (
+        <section className="rounded-lg border border-neutral-200 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Panel de cata en vivo</h2>
+              <p className="mt-1 text-sm text-neutral-500">
+                Seguí el progreso de evaluaciones en tiempo real.
+              </p>
+            </div>
+            <Button
+              variant="default"
+              onClick={() => navigate(`/admin/cata/${edicion.id}`)}
+              className="w-[132px]"
+            >
+              Abrir panel →
+            </Button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

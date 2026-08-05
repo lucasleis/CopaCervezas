@@ -6,6 +6,7 @@ import LoginPage from "@/pages/LoginPage";
 import SelectOrgPage from "@/pages/SelectOrgPage";
 import AdminLayout from "@/components/AdminLayout";
 import BreweryLayout from "@/components/BreweryLayout";
+import DashboardPage from "@/pages/admin/DashboardPage";
 import EdicionesPage from "@/pages/admin/EdicionesPage";
 import EdicionDetailPage from "@/pages/admin/EdicionDetailPage";
 import CataLivePage from "@/pages/admin/CataLivePage";
@@ -82,7 +83,7 @@ export default function AppRouter() {
         element={
           <ProtectedRoute requiredRole="admin">
             <AdminLayout>
-              <div className="p-8 text-2xl font-semibold">Dashboard</div>
+              <DashboardPage />
             </AdminLayout>
           </ProtectedRoute>
         }
