@@ -8,6 +8,12 @@ import { useEdicionActivaJuez } from "@/hooks/useEdicionActivaJuez";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FlightCard } from "@/components/ui/FlightCard";
 import type { EstadoVuelo as EstadoVueloBadge } from "@/components/ui/StatusBadge";
+import type { EdicionJuez } from "@/api/cata";
+
+const ESTADO_EDICION_LABEL: Record<EdicionJuez["estado"], string> = {
+  "pre-cata": "Pre-cata",
+  cata: "En cata",
+};
 
 function toEstadoBadge(estado: EstadoVuelo): EstadoVueloBadge {
   if (estado === "en_curso") return "en-curso";
@@ -28,12 +34,18 @@ export default function CataPage() {
 
   const {
     ediciones,
-    edicionId: edicionActivaId,
     isLoading: edicionesLoading,
     isError: edicionesError,
   } = useEdicionActivaJuez();
   const [edicionSeleccionada, setEdicionSeleccionada] = useState<string | null>(null);
-  const edicionId = edicionSeleccionada ?? edicionActivaId;
+
+  // Si el juez solo tiene una edición disponible, saltamos la pantalla de
+  // selección y la usamos directamente.
+  const edicionUnica = ediciones.length === 1 ? ediciones[0].id : null;
+  const edicionId = edicionSeleccionada ?? edicionUnica;
+
+  const mostrarSelectorEdicion =
+    !edicionesLoading && !edicionesError && ediciones.length > 1 && !edicionSeleccionada;
 
   const {
     data: vuelos,
@@ -47,6 +59,40 @@ export default function CataPage() {
 
   const isLoading = edicionesLoading || (!!edicionId && vuelosLoading);
   const isError = edicionesError || vuelosError;
+
+  if (mostrarSelectorEdicion) {
+    return (
+      <div className="p-8">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-neutral-900">Mis competencias</h1>
+            {me && <p className="text-sm text-neutral-500">{me.email}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="text-sm text-neutral-600 hover:text-neutral-900"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ediciones.map((ed) => (
+            <button
+              key={ed.id}
+              type="button"
+              onClick={() => setEdicionSeleccionada(ed.id)}
+              className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-4 text-left hover:border-neutral-300 hover:shadow-sm"
+            >
+              <span className="text-base font-semibold text-neutral-900">{ed.nombre}</span>
+              <span className="text-sm text-neutral-500">{ESTADO_EDICION_LABEL[ed.estado]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
