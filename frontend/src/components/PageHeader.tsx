@@ -5,7 +5,8 @@ import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-interface PageHeaderProps extends React.ComponentProps<"div"> {
+interface PageHeaderProps
+  extends Omit<React.ComponentProps<"div">, "title"> {
   title: React.ReactNode
   subtitle?: React.ReactNode
   backTo?: string
