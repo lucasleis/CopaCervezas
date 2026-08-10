@@ -138,6 +138,8 @@ export default function CataLivePage() {
   return (
     <div className="p-8">
       <PageHeader
+        backTo={`/admin/ediciones/${edicionId}`}
+        backLabel="Edición"
         title="Panel de cata en vivo"
         subtitle="Progreso de los vuelos en tiempo real."
       />
