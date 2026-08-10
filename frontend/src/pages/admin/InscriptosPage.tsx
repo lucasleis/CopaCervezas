@@ -5,6 +5,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   getMuestrasEdicionAdmin,
   aprobarMuestra,
@@ -193,45 +203,45 @@ export default function InscriptosPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-600">Cervecería</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Estilo</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Nombre comercial</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Aprobada</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Estado pago</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Activa</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card padding="none" className="overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-neutral-50 hover:bg-neutral-50">
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Cervecería</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Estilo</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Nombre comercial</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Aprobada</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Estado pago</TableHead>
+              <TableHead className="px-4 py-3 font-medium text-neutral-600">Activa</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
               <>
                 {[1, 2, 3].map((i) => (
-                  <tr key={i} className="border-b border-neutral-100">
-                    <td className="px-4 py-3" colSpan={6}>
+                  <TableRow key={i}>
+                    <TableCell className="px-4 py-3 whitespace-normal" colSpan={6}>
                       <Skeleton className="h-5 w-full" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </>
             )}
 
             {isError && (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-sm text-red-500">
-                  No se pudieron cargar las muestras.
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState bare variant="error" message="No se pudieron cargar las muestras." />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading && !isError && muestras?.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-sm text-neutral-500">
-                  No hay muestras que coincidan con los filtros.
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="p-0">
+                  <EmptyState bare message="No hay muestras que coincidan con los filtros." />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading &&
@@ -243,12 +253,14 @@ export default function InscriptosPage() {
                   : [];
                 return (
                   <Fragment key={muestra.id}>
-                    <tr
-                      className={`border-b border-neutral-100 last:border-0 ${!muestra.activa ? "opacity-50" : ""}`}
-                    >
-                      <td className="px-4 py-3 text-neutral-900">{muestra.cerveceria_nombre}</td>
-                      <td className="px-4 py-3 text-neutral-600">{muestra.estilo_nombre}</td>
-                      <td className="px-4 py-3">
+                    <TableRow className={!muestra.activa ? "opacity-50" : ""}>
+                      <TableCell className="px-4 py-3 whitespace-normal text-neutral-900">
+                        {muestra.cerveceria_nombre}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-normal text-neutral-600">
+                        {muestra.estilo_nombre}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-normal">
                         <button
                           type="button"
                           className="text-left text-neutral-900 hover:underline"
@@ -261,8 +273,8 @@ export default function InscriptosPage() {
                             </span>
                           )}
                         </button>
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-normal">
                         <ColorDropdown
                           value={muestra.aprobada ? "true" : "false"}
                           options={[
@@ -272,8 +284,8 @@ export default function InscriptosPage() {
                           onChange={(v) => handleChangeAprobada(muestra, v === "true")}
                           disabled={aprobarMutation.isPending}
                         />
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-normal">
                         <ColorDropdown
                           value={muestra.estado_pago}
                           options={[
@@ -283,14 +295,14 @@ export default function InscriptosPage() {
                           onChange={(v) => handleChangeEstadoPago(muestra, v as EstadoPago)}
                           disabled={estadoPagoMutation.isPending}
                         />
-                      </td>
-                      <td className="px-4 py-3 text-neutral-600">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-normal text-neutral-600">
                         {muestra.activa ? "Sí" : "No"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                     {expanded && infoEntries.length > 0 && (
-                      <tr className="border-b border-neutral-100 bg-neutral-50 last:border-0">
-                        <td colSpan={6} className="px-4 py-2">
+                      <TableRow className="bg-neutral-50 hover:bg-neutral-50">
+                        <TableCell colSpan={6} className="px-4 py-2 whitespace-normal">
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
                             {infoEntries.map(([key, value]) => (
                               <span key={key}>
@@ -298,15 +310,15 @@ export default function InscriptosPage() {
                               </span>
                             ))}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )}
                   </Fragment>
                 );
               })}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }
