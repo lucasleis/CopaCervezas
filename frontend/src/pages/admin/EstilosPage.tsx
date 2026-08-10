@@ -294,7 +294,7 @@ export default function EstilosPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEstiloAEliminar(null)}>Cancelar</Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               disabled={deleteMutation.isPending}
               onClick={() => estiloAEliminar && deleteMutation.mutate(estiloAEliminar.id)}
             >

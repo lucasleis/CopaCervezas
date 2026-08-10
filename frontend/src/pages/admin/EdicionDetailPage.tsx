@@ -276,7 +276,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
@@ -470,7 +470,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
@@ -676,7 +676,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
