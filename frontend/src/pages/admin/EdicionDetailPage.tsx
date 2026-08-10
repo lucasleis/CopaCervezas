@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -239,7 +240,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && precios?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay precios configurados.</div>
+          <EmptyState bare message="No hay precios configurados." />
         )}
         {!isLoading && precios?.map((p) => (
           <div key={p.id} className={ROW_GRID}>
@@ -433,7 +434,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && lugares?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay lugares configurados.</div>
+          <EmptyState bare message="No hay lugares configurados." />
         )}
         {!isLoading && lugares?.map((l) => (
           <div key={l.id} className={ROW_GRID}>
@@ -633,7 +634,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && descuentos?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay códigos de descuento.</div>
+          <EmptyState bare message="No hay códigos de descuento." />
         )}
         {!isLoading && descuentos?.map((d) => (
           <div key={d.id} className={ROW_GRID}>
