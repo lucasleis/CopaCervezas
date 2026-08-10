@@ -266,8 +266,8 @@ export default function InscriptosPage() {
                         <ColorDropdown
                           value={muestra.aprobada ? "true" : "false"}
                           options={[
-                            { value: "false", label: "Pendiente", className: "bg-yellow-100 text-yellow-800", hoverClassName: "hover:bg-yellow-200" },
-                            { value: "true", label: "Aprobada", className: "bg-green-100 text-green-800", hoverClassName: "hover:bg-green-200" },
+                            { value: "false", label: "Pendiente", className: "bg-warning-100 text-warning-800", hoverClassName: "hover:bg-warning-200" },
+                            { value: "true", label: "Aprobada", className: "bg-success-100 text-success-800", hoverClassName: "hover:bg-success-200" },
                           ]}
                           onChange={(v) => handleChangeAprobada(muestra, v === "true")}
                           disabled={aprobarMutation.isPending}
@@ -277,8 +277,8 @@ export default function InscriptosPage() {
                         <ColorDropdown
                           value={muestra.estado_pago}
                           options={[
-                            { value: "pendiente", label: "Pendiente", className: "bg-gray-100 text-gray-600", hoverClassName: "hover:bg-gray-200" },
-                            { value: "pagado", label: "Pagado", className: "bg-green-100 text-green-800", hoverClassName: "hover:bg-green-200" },
+                            { value: "pendiente", label: "Pendiente", className: "bg-neutral-100 text-neutral-600", hoverClassName: "hover:bg-neutral-200" },
+                            { value: "pagado", label: "Pagado", className: "bg-success-100 text-success-800", hoverClassName: "hover:bg-success-200" },
                           ]}
                           onChange={(v) => handleChangeEstadoPago(muestra, v as EstadoPago)}
                           disabled={estadoPagoMutation.isPending}
