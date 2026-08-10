@@ -4,6 +4,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -33,14 +44,14 @@ function EstiloRow({
   onEliminar: (e: Estilo) => void;
 }) {
   return (
-    <tr
-      className={`border-b border-neutral-100 last:border-0 ${isOrg ? "cursor-pointer hover:bg-neutral-50" : ""} ${indentado ? "bg-neutral-50" : ""}`}
+    <TableRow
+      className={`${isOrg ? "cursor-pointer" : ""} ${indentado ? "bg-neutral-50 hover:bg-neutral-50" : ""}`}
       onClick={() => isOrg && onEditar(estilo)}
     >
-      <td className="px-4 py-2.5 font-mono text-xs font-medium text-neutral-400">
+      <TableCell className="font-mono text-xs font-medium text-neutral-400">
         {estilo.codigo}
-      </td>
-      <td className="px-4 py-2.5 text-neutral-900">
+      </TableCell>
+      <TableCell className="text-neutral-900">
         {indentado ? (
           <span className="flex items-center gap-1.5 pl-6 text-sm font-medium text-neutral-900">
             <span className="text-neutral-300">↳</span>
@@ -49,26 +60,26 @@ function EstiloRow({
         ) : (
           <span className="font-medium text-neutral-900">{estilo.nombre}</span>
         )}
-      </td>
-      <td className={`px-4 py-2.5 text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
+      </TableCell>
+      <TableCell className={`text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
         {estilo.requiere_info_adicional ? "Sí" : "No"}
-      </td>
-      <td className={`px-4 py-2.5 text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
+      </TableCell>
+      <TableCell className={`text-sm ${indentado ? "text-neutral-700" : "text-neutral-600"}`}>
         {estilo.campos_info_adicional?.length ?? 0}
-      </td>
-      <td className="px-4 py-2.5">
+      </TableCell>
+      <TableCell>
         {isOrg ? (
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onCampos(estilo); }}>
               Campos
             </Button>
-            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); onEliminar(estilo); }}>
+            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive/80" onClick={(e) => { e.stopPropagation(); onEliminar(estilo); }}>
               Eliminar
             </Button>
           </div>
         ) : null}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -175,10 +186,10 @@ export default function EstilosPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">Estilos</h1>
-        <Button onClick={handleCrear}>Crear estilo</Button>
-      </div>
+      <PageHeader
+        title="Estilos"
+        actions={<Button onClick={handleCrear}>Crear estilo</Button>}
+      />
 
       <div className="mb-4">
         <Input
@@ -189,46 +200,49 @@ export default function EstilosPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Código</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Nombre</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Requiere info adicional</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Campos definidos</th>
-              <th className="px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-600">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card padding="none">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Código</TableHead>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Requiere info adicional</TableHead>
+              <TableHead>Campos definidos</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
               <>
                 {[1, 2, 3].map((i) => (
-                  <tr key={i} className="border-b border-neutral-100">
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-40" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-10" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-4 w-10" /></td>
-                    <td className="px-4 py-3"><Skeleton className="h-7 w-24" /></td>
-                  </tr>
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+                    <TableCell><Skeleton className="h-7 w-24" /></TableCell>
+                  </TableRow>
                 ))}
               </>
             )}
 
             {isError && (
-              <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-sm text-red-500">
-                  No se pudieron cargar los estilos.
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState bare variant="error" message="No se pudieron cargar los estilos." />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading && !isError && filas.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-sm text-neutral-500">
-                  {hayBusqueda ? "No se encontraron estilos." : "No hay estilos cargados."}
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState
+                    bare
+                    message={hayBusqueda ? "No se encontraron estilos." : "No hay estilos cargados."}
+                  />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading && !isError && filas.map(({ estilo, indentado }) => (
@@ -242,9 +256,9 @@ export default function EstilosPage() {
                 onEliminar={setEstiloAEliminar}
               />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
 
       <EstiloDialog
         key={estiloEditando?.id ?? "new"}
