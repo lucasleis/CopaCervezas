@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PageHeader } from "@/components/PageHeader";
 import {
   getMuestrasEdicionAdmin,
   aprobarMuestra,
@@ -159,12 +160,16 @@ export default function InscriptosPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">Inscriptos</h1>
-        <Button variant="outline" onClick={handleExportarMails}>
-          Exportar mails
-        </Button>
-      </div>
+      <PageHeader
+        backTo={`/admin/ediciones/${edicionId}`}
+        backLabel="Edición"
+        title="Inscriptos"
+        actions={
+          <Button variant="outline" onClick={handleExportarMails}>
+            Exportar mails
+          </Button>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap gap-4">
         <div className="flex items-center gap-1.5">
