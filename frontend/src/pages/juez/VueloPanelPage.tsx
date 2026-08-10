@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   getMuestrasVuelo,
@@ -11,11 +11,13 @@ import { getMe } from "@/api/auth";
 import { useEdicionActivaJuez } from "@/hooks/useEdicionActivaJuez";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/PageHeader";
 import EvaluacionDialog from "@/components/juez/EvaluacionDialog";
 
 export default function VueloPanelPage() {
   const { vuelo_id: vueloId } = useParams<{ vuelo_id: string }>();
-  const navigate = useNavigate();
   const [muestraSeleccionada, setMuestraSeleccionada] = useState<MuestraVuelo | null>(null);
 
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: getMe });
@@ -53,44 +55,28 @@ export default function VueloPanelPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/cata")}>
-            ← Volver
-          </Button>
-          <h1 className="mt-2 text-2xl font-semibold text-neutral-900">
-            Muestras del vuelo
-          </h1>
-        </div>
-      </div>
+      <PageHeader title="Muestras del vuelo" backTo="/cata" backLabel="Volver" />
 
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white p-4"
-            >
+            <Card key={i} padding="sm" className="flex items-center justify-between">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-3 w-40" />
               </div>
               <Skeleton className="h-7 w-24" />
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudieron cargar las muestras de este vuelo.
-        </div>
+        <EmptyState variant="error" message="No se pudieron cargar las muestras de este vuelo." />
       )}
 
       {!isLoading && !isError && muestrasOrdenadas.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          Este vuelo no tiene muestras cargadas.
-        </div>
+        <EmptyState message="Este vuelo no tiene muestras cargadas." />
       )}
 
       {!isLoading && !isError && muestrasOrdenadas.length > 0 && (
@@ -103,9 +89,10 @@ export default function VueloPanelPage() {
               : [];
 
             return (
-              <div
+              <Card
                 key={muestra.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4"
+                padding="sm"
+                className="flex items-center justify-between gap-4"
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -140,7 +127,7 @@ export default function VueloPanelPage() {
                 >
                   {evaluada ? "Ver evaluación" : "Evaluar"}
                 </Button>
-              </div>
+              </Card>
             );
           })}
         </div>
