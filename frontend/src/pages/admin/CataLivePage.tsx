@@ -5,7 +5,19 @@ import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -125,14 +137,10 @@ export default function CataLivePage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-neutral-900">
-          Panel de cata en vivo
-        </h1>
-        <p className="text-sm text-neutral-500">
-          Progreso de los vuelos en tiempo real.
-        </p>
-      </div>
+      <PageHeader
+        title="Panel de cata en vivo"
+        subtitle="Progreso de los vuelos en tiempo real."
+      />
 
       {isLoading && (
         <div className="space-y-3">
@@ -143,18 +151,13 @@ export default function CataLivePage() {
       )}
 
       {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudo cargar el progreso de la cata.
-        </div>
+        <EmptyState variant="error" message="No se pudo cargar el progreso de la cata." />
       )}
 
       {!isLoading && !isError && (
         <div className="space-y-6">
           {gruposOrdenados.map(([grupoNombre, vuelos]) => (
-            <div
-              key={grupoNombre}
-              className="overflow-hidden rounded-lg border border-neutral-200 bg-white"
-            >
+            <Card key={grupoNombre} padding="none" className="overflow-hidden">
               <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-sm font-semibold text-neutral-700">
                 {grupoNombre}
               </div>
@@ -191,7 +194,7 @@ export default function CataLivePage() {
                   );
                 })}
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -211,30 +214,27 @@ export default function CataLivePage() {
         )}
 
         {!incongruenciasLoading && incongruencias && incongruencias.length > 0 && (
-          <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-                  <th className="px-4 py-2 font-medium text-neutral-600">Código</th>
-                  <th className="px-4 py-2 font-medium text-neutral-600">Vuelo</th>
-                  <th className="px-4 py-2 font-medium text-neutral-600">Avanza</th>
-                  <th className="px-4 py-2 font-medium text-neutral-600">No avanza</th>
-                  <th className="px-4 py-2 font-medium text-neutral-600">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card padding="none">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Vuelo</TableHead>
+                  <TableHead>Avanza</TableHead>
+                  <TableHead>No avanza</TableHead>
+                  <TableHead>Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {incongruencias.map((inc) => (
-                  <tr
-                    key={`${inc.vuelo_id}-${inc.muestra_id}`}
-                    className="border-b border-neutral-100 last:border-0"
-                  >
-                    <td className="px-4 py-2 font-mono">{inc.cod_anonimo ?? "—"}</td>
-                    <td className="px-4 py-2 font-mono text-xs text-neutral-500">
+                  <TableRow key={`${inc.vuelo_id}-${inc.muestra_id}`}>
+                    <TableCell className="font-mono">{inc.cod_anonimo ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs text-neutral-500">
                       {inc.vuelo_id}
-                    </td>
-                    <td className="px-4 py-2">{inc.avanza_true_count}</td>
-                    <td className="px-4 py-2">{inc.avanza_false_count}</td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell>{inc.avanza_true_count}</TableCell>
+                    <TableCell>{inc.avanza_false_count}</TableCell>
+                    <TableCell>
                       <Button
                         size="sm"
                         variant="outline"
@@ -242,12 +242,12 @@ export default function CataLivePage() {
                       >
                         Corregir evaluación
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
 
@@ -336,12 +336,11 @@ function CorreccionDialog({
             <label htmlFor="comentario-final-admin" className="text-sm font-medium text-neutral-700">
               Comentario Final
             </label>
-            <textarea
+            <Textarea
               id="comentario-final-admin"
               value={comentarioFinal}
               onChange={(e) => setComentarioFinal(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
 
@@ -375,7 +374,7 @@ function CorreccionDialog({
             </div>
           </div>
 
-          {formError && <p className="text-sm text-red-500">{formError}</p>}
+          {formError && <p className="text-sm text-destructive">{formError}</p>}
         </div>
 
         <DialogFooter>
