@@ -536,8 +536,8 @@ export default function GruposPage() {
   return (
     <div className="p-8 space-y-6">
       <PageHeader
-        backTo="/admin/ediciones"
-        backLabel="Ediciones"
+        backTo={`/admin/ediciones/${edicionId}`}
+        backLabel="Edición"
         title="Agrupación de muestras"
       />
 
