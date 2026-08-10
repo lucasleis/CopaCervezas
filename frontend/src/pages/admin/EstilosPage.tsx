@@ -73,7 +73,7 @@ function EstiloRow({
             <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onCampos(estilo); }}>
               Campos
             </Button>
-            <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); onEliminar(estilo); }}>
+            <Button size="sm" variant="destructive-outline" onClick={(e) => { e.stopPropagation(); onEliminar(estilo); }}>
               Eliminar
             </Button>
           </div>

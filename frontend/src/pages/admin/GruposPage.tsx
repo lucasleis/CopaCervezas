@@ -267,9 +267,8 @@ function GrupoCard({
       {!bloqueado && grupo.cant_muestras === 0 && (
         <div className="flex justify-end border-t border-neutral-200 px-4 py-2">
           <Button
-            variant="outline"
+            variant="destructive-outline"
             size="sm"
-            className="text-red-600"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
           >

@@ -176,8 +176,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                         ) : (
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700"
+                            variant="destructive-outline"
                             onClick={() => { console.log("eliminar click", campo.clave); setCampoAEliminar(campo.clave); }}
                           >
                             Eliminar

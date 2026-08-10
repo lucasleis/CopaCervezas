@@ -212,7 +212,7 @@ export default function MisMuestrasEdicionPage() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="destructive"
+                    variant="destructive-outline"
                     disabled={!muestra.activa || deleteMutation.isPending}
                     onClick={() => handleDelete(muestra)}
                   >

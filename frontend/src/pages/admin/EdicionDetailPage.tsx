@@ -250,7 +250,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
             <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_hasta)}</span>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
             </div>
           </div>
         ))}
@@ -444,7 +444,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
             <span className={`${DATA_CELL} text-neutral-600`}>{l.provincia}</span>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
             </div>
           </div>
         ))}
@@ -650,7 +650,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
             </div>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
             </div>
           </div>
         ))}
