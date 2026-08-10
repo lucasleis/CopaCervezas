@@ -6,6 +6,17 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +58,7 @@ const ESTADO_CONFIG: Record<
   },
   cerrada: {
     label: "Cerrada",
-    className: "bg-green-100 text-green-700",
+    className: "bg-success-100 text-success-700",
   },
 };
 
@@ -146,100 +157,86 @@ export default function EdicionesPage() {
 
   return (
     <div className="p-8">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-neutral-900">Ediciones</h1>
-        <Button onClick={() => setModalOpen(true)}>Nueva edición</Button>
-      </div>
+      <PageHeader
+        title="Ediciones"
+        actions={
+          <Button onClick={() => setModalOpen(true)}>Nueva edición</Button>
+        }
+      />
 
       {/* Tabla */}
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-3 font-medium text-neutral-600">Nombre</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">Estado</th>
-              <th className="px-4 py-3 font-medium text-neutral-600">
-                Fecha de cata
-              </th>
-              <th className="px-4 py-3 font-medium text-neutral-600">
-                Cierre de inscripción
-              </th>
-              <th className="px-4 py-3 font-medium text-neutral-600">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card padding="none">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Fecha de cata</TableHead>
+              <TableHead>Cierre de inscripción</TableHead>
+              <TableHead>Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {isLoading && (
               <>
                 {[1, 2, 3].map((i) => (
-                  <tr key={i} className="border-b border-neutral-100">
-                    <td className="px-4 py-3">
+                  <TableRow key={i}>
+                    <TableCell>
                       <Skeleton className="h-4 w-48" />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-5 w-24 rounded-full" />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-24" />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-24" />
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-7 w-14" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </>
             )}
 
             {isError && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-12 text-center text-sm text-red-500"
-                >
-                  No se pudo cargar la lista de ediciones.
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState bare variant="error" message="No se pudo cargar la lista de ediciones." />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading && !isError && ediciones?.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-12 text-center text-sm text-neutral-500"
-                >
-                  No hay ediciones creadas todavía.
-                </td>
-              </tr>
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState bare message="No hay ediciones creadas todavía." />
+                </TableCell>
+              </TableRow>
             )}
 
             {!isLoading &&
               !isError &&
               ediciones?.map((edicion: Edicion) => (
-                <tr
-                  key={edicion.id}
-                  className="border-b border-neutral-100 last:border-0"
-                >
-                  <td
-                    className="px-4 py-3 cursor-pointer hover:text-primary font-medium"
+                <TableRow key={edicion.id}>
+                  <TableCell
+                    className="cursor-pointer hover:text-primary font-medium"
                     onClick={() => navigate(`/admin/ediciones/${edicion.id}`)}
                   >
                     {edicion.nombre}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <EstadoBadge estado={edicion.estado} />
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
+                  </TableCell>
+                  <TableCell className="text-neutral-600">
                     {formatFecha(edicion.fecha_evento)}
-                  </td>
-                  <td className="px-4 py-3 text-neutral-600">
+                  </TableCell>
+                  <TableCell className="text-neutral-600">
                     {formatFecha(edicion.fecha_fin_inscripcion)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
@@ -249,12 +246,12 @@ export default function EdicionesPage() {
                     >
                       Ver
                     </Button>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
 
       {/* Modal de creación */}
       <Dialog open={modalOpen} onOpenChange={handleOpenChange}>
