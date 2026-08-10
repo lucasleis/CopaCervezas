@@ -115,7 +115,11 @@ export default function CataPage() {
                 onValueChange={(value) => setEdicionSeleccionada(value as string)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccioná una edición">
+                    {(value: string | null) =>
+                      ediciones.find((ed) => ed.id === value)?.nombre ?? "Seleccioná una edición"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {ediciones.map((ed) => (
