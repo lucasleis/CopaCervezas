@@ -12,11 +12,25 @@ interface PageHeaderProps
   backTo?: string
   backLabel?: string
   actions?: React.ReactNode
+  /**
+   * "admin": título text-2xl (default, densidad de herramienta de uso diario).
+   * "public": título text-3xl tracking-tight (cara al participante).
+   */
+  variant?: "admin" | "public"
 }
 
 const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
   (
-    { className, title, subtitle, backTo, backLabel = "Volver", actions, ...props },
+    {
+      className,
+      title,
+      subtitle,
+      backTo,
+      backLabel = "Volver",
+      actions,
+      variant = "admin",
+      ...props
+    },
     ref
   ) => {
     const navigate = useNavigate()
@@ -42,7 +56,14 @@ const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
         )}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">{title}</h1>
+            <h1
+              className={cn(
+                "font-semibold text-neutral-900",
+                variant === "public" ? "text-3xl tracking-tight" : "text-2xl"
+              )}
+            >
+              {title}
+            </h1>
             {subtitle && <p className="text-sm text-neutral-500">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
