@@ -10,21 +10,22 @@ Leé este archivo antes de cualquier tarea. No pidas aclaraciones sobre lo que e
 
 ```
 CopaCervezas/
-├── src/                        ← React frontend (NO está en frontend/)
-│   ├── api/
-│   │   ├── client.ts           ← axios + auto-refresh + request queue
-│   │   ├── auth.ts             ← login(), logout(), getMe(), selectOrg()
-│   │   └── ediciones.ts        ← full edition API client
-│   ├── components/
-│   │   ├── ui/                 ← shadcn/ui (@base-ui/react)
-│   │   ├── AdminLayout.tsx
-│   │   └── Sidebar.tsx
-│   ├── contexts/
-│   │   └── AuthContext.tsx     ← isAuthenticated, role, loading
-│   ├── pages/
-│   │   ├── LoginPage.tsx       ← role-based redirect after login
-│   │   └── SelectOrgPage.tsx   ← multi-org selection screen
-│   └── router.tsx              ← ProtectedRoute (requiredRole), RootRedirect
+├── frontend/                   ← React frontend
+│   └── src/
+│       ├── api/
+│       │   ├── client.ts           ← axios + auto-refresh + request queue
+│       │   ├── auth.ts             ← login(), logout(), getMe(), selectOrg()
+│       │   └── ediciones.ts        ← full edition API client
+│       ├── components/
+│       │   ├── ui/                 ← shadcn/ui (@base-ui/react)
+│       │   ├── AdminLayout.tsx
+│       │   └── Sidebar.tsx
+│       ├── contexts/
+│       │   └── AuthContext.tsx     ← isAuthenticated, role, loading
+│       ├── pages/
+│       │   ├── LoginPage.tsx       ← role-based redirect after login
+│       │   └── SelectOrgPage.tsx   ← multi-org selection screen
+│       └── router.tsx              ← ProtectedRoute (requiredRole), RootRedirect
 ├── backend/
 │   ├── cmd/server/main.go      ← Echo server, CORS, todas las rutas
 │   ├── internal/
@@ -90,7 +91,7 @@ CopaCervezas/
 - Migrations 000005–000008: ediciones, precios_inscripcion, lugares_entrega, codigos_descuento
 - `backend/db/queries/ediciones.sql` — 17 queries sqlc
 - `backend/db/seeds/edicion_seed.sql` — seed Copa Argentina 2027
-- `src/api/ediciones.ts` — tipos TypeScript y funciones API completas
+- `frontend/src/api/ediciones.ts` — tipos TypeScript y funciones API completas
 
 **No existe aún:**
 - Handlers CRUD de ediciones en backend
@@ -129,6 +130,14 @@ CopaCervezas/
 - Hacer commit después de cada paso completado
 - El trabajo con DB requiere PostgreSQL local corriendo (`sudo service postgresql start`)
 - Ejecutar `sqlc generate` desde `backend/` después de cualquier cambio en migrations
+
+---
+
+## Convenciones de UI
+
+- Antes de escribir un elemento HTML nativo (`button`, `input`, `textarea`, `select`, `table`, `label`, `checkbox`), revisar `frontend/src/components/ui/`. Si existe el componente equivalente, usarlo.
+- Si el componente existe pero le falta una variante o un tamaño para el caso, agregar la variante al componente en `ui/` — no esquivarlo con clases sueltas.
+- Los colores salen de los tokens de `@theme` en `index.css` (`primary`, `success`, `warning`, `danger`, `info`, `neutral`, `destructive`). No usar la paleta Tailwind por defecto (`red-*`, `gray-*`, `green-*`, `yellow-*`, `blue-*`, `purple-*`, `orange-*`, `amber-*`).
 
 ---
 

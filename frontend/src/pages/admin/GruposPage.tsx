@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
-import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Dialog,
   DialogContent,
@@ -175,17 +177,18 @@ function GrupoCard({
   }
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white">
+    <Card padding="none">
       <div className="flex items-center justify-between gap-4 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <button
+          <Button
             type="button"
+            variant="quiet"
+            size="icon-xs"
             onClick={() => setExpanded((v) => !v)}
-            className="shrink-0 text-neutral-400 hover:text-neutral-600"
             aria-label={expanded ? "Colapsar" : "Expandir"}
           >
             {expanded ? "▾" : "▸"}
-          </button>
+          </Button>
           {editingNombre && !bloqueado ? (
             <Input
               type="text"
@@ -228,7 +231,7 @@ function GrupoCard({
             </div>
           )}
           {!muestrasLoading && muestras?.length === 0 && (
-            <p className="py-2 text-sm text-neutral-500">Este grupo no tiene muestras.</p>
+            <EmptyState bare message="Este grupo no tiene muestras." />
           )}
           {!muestrasLoading && muestras && muestras.length > 0 && (
             <ul className="space-y-2">
@@ -264,9 +267,8 @@ function GrupoCard({
       {!bloqueado && grupo.cant_muestras === 0 && (
         <div className="flex justify-end border-t border-neutral-200 px-4 py-2">
           <Button
-            variant="outline"
+            variant="destructive-outline"
             size="sm"
-            className="text-red-600"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
           >
@@ -274,7 +276,7 @@ function GrupoCard({
           </Button>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -453,7 +455,7 @@ function SinGrupoPanel({
   });
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white">
+    <Card padding="none">
       <div className="flex items-center justify-between gap-2 border-b border-neutral-200 px-4 py-3">
         <h2 className="text-sm font-semibold text-neutral-900">Sin grupo</h2>
         <Badge variant="outline">{muestras?.length ?? 0}</Badge>
@@ -466,7 +468,7 @@ function SinGrupoPanel({
           </div>
         )}
         {!isLoading && muestras?.length === 0 && (
-          <p className="text-sm text-green-600">✓ Todas las muestras tienen grupo asignado.</p>
+          <p className="text-sm text-success-600">✓ Todas las muestras tienen grupo asignado.</p>
         )}
         {!isLoading && muestras && muestras.length > 0 && (
           <ul className="space-y-3">
@@ -493,7 +495,7 @@ function SinGrupoPanel({
           </ul>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -501,7 +503,6 @@ function SinGrupoPanel({
 
 export default function GruposPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const edicionId = id!;
 
   // Regla de bloqueo — se implementa en LLE-12. Por ahora siempre false.
@@ -533,19 +534,14 @@ export default function GruposPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white text-gray-700 font-semibold hover:bg-gray-100 transition-colors cursor-pointer mb-2"
-          onClick={() => navigate("/admin/ediciones")}
-        >
-          <ArrowLeft size={16} />
-          Ediciones
-        </button>
-        <h1 className="text-2xl font-semibold text-neutral-900">Agrupación de muestras</h1>
-      </div>
+      <PageHeader
+        backTo={`/admin/ediciones/${edicionId}`}
+        backLabel="Edición"
+        title="Agrupación de muestras"
+      />
 
       {edicion && edicion.estado !== "pre-cata" ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="rounded-lg border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-800">
           Esta sección solo está disponible en estado pre-cata.
         </div>
       ) : (
@@ -573,9 +569,7 @@ export default function GruposPage() {
             )}
 
             {!gruposLoading && grupos?.length === 0 && (
-              <p className="rounded-lg border border-neutral-200 bg-white p-6 text-sm text-neutral-500">
-                No hay grupos creados. Usá Auto-agrupar o creá uno manualmente.
-              </p>
+              <EmptyState message="No hay grupos creados. Usá Auto-agrupar o creá uno manualmente." />
             )}
 
             {!gruposLoading && grupos && grupos.length > 0 && (

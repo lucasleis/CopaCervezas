@@ -160,7 +160,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                             <span className="text-xs text-neutral-600">¿Confirmar?</span>
                             <Button
                               size="sm"
-                              className="bg-red-600 hover:bg-red-700 text-white"
+                              variant="destructive-solid"
                               onClick={confirmarEliminarCampo}
                             >
                               Eliminar
@@ -176,8 +176,7 @@ export default function CamposDialog({ open, onOpenChange, estilo }: Props) {
                         ) : (
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="text-red-600 hover:text-red-700"
+                            variant="destructive-outline"
                             onClick={() => { console.log("eliminar click", campo.clave); setCampoAEliminar(campo.clave); }}
                           >
                             Eliminar

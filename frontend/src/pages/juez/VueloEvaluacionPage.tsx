@@ -13,6 +13,9 @@ import { getMe } from "@/api/auth";
 import { useEdicionActivaJuez } from "@/hooks/useEdicionActivaJuez";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 import EvaluacionForm from "@/components/juez/EvaluacionForm";
 
@@ -117,20 +120,12 @@ export default function VueloEvaluacionPage() {
         </div>
       )}
 
-      <div className="mb-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/cata")}>
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Volver
-        </Button>
-        <h1 className="mt-2 text-2xl font-semibold text-neutral-900">
-          {vuelo ? `${vuelo.grupo_nombre} — Vuelo ${vuelo.orden}` : "Vuelo"}
-        </h1>
-        {vuelo && (
-          <p className="text-sm text-neutral-500">
-            Ronda {vuelo.numero_ronda} de {vuelo.cant_rondas}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        title={vuelo ? `${vuelo.grupo_nombre} — Vuelo ${vuelo.orden}` : "Vuelo"}
+        subtitle={vuelo && `Ronda ${vuelo.numero_ronda} de ${vuelo.cant_rondas}`}
+        backTo="/cata"
+        backLabel="Volver"
+      />
 
       {isLoading && (
         <div className="space-y-4">
@@ -144,19 +139,15 @@ export default function VueloEvaluacionPage() {
       )}
 
       {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudieron cargar las muestras de este vuelo.
-        </div>
+        <EmptyState variant="error" message="No se pudieron cargar las muestras de este vuelo." />
       )}
 
       {!isLoading && !isError && muestrasOrdenadas.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          Este vuelo no tiene muestras cargadas.
-        </div>
+        <EmptyState message="Este vuelo no tiene muestras cargadas." />
       )}
 
       {!isLoading && !isError && muestrasOrdenadas.length > 0 && mostrarCompletado && (
-        <div className="flex flex-col items-center gap-4 rounded-lg border border-neutral-200 bg-white px-4 py-16 text-center">
+        <Card className="flex flex-col items-center gap-4 px-4 py-16 text-center">
           <CheckCircle2 className="size-10 text-success-600" aria-hidden="true" />
           <p className="text-lg font-semibold text-neutral-900">Vuelo completado</p>
           <p className="text-sm text-neutral-500">
@@ -166,7 +157,7 @@ export default function VueloEvaluacionPage() {
             <ArrowLeft className="size-4" aria-hidden="true" />
             Volver a mis vuelos
           </Button>
-        </div>
+        </Card>
       )}
 
       {!isLoading &&

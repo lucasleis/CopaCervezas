@@ -3,10 +3,12 @@ import type { FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/PageHeader";
 import {
   getEdicion,
   updateEdicion,
@@ -100,7 +103,7 @@ function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
   }
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white p-6">
+    <Card padding="md">
       <h2 className="mb-4 text-base font-semibold text-neutral-900">Datos generales</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
@@ -130,7 +133,7 @@ function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
           </Button>
         </div>
       </form>
-    </section>
+    </Card>
   );
 }
 
@@ -213,7 +216,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
+    <Card padding="none">
       <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Precios de inscripción</h2>
       </div>
@@ -237,7 +240,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && precios?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay precios configurados.</div>
+          <EmptyState bare message="No hay precios configurados." />
         )}
         {!isLoading && precios?.map((p) => (
           <div key={p.id} className={ROW_GRID}>
@@ -247,7 +250,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
             <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_hasta)}</span>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
             </div>
           </div>
         ))}
@@ -273,7 +276,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
@@ -320,7 +323,7 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
   );
 }
 
@@ -407,7 +410,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
+    <Card padding="none">
       <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Lugares de entrega</h2>
       </div>
@@ -431,7 +434,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && lugares?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay lugares configurados.</div>
+          <EmptyState bare message="No hay lugares configurados." />
         )}
         {!isLoading && lugares?.map((l) => (
           <div key={l.id} className={ROW_GRID}>
@@ -441,7 +444,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
             <span className={`${DATA_CELL} text-neutral-600`}>{l.provincia}</span>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
             </div>
           </div>
         ))}
@@ -467,7 +470,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
@@ -518,7 +521,7 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
   );
 }
 
@@ -607,7 +610,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <section className="rounded-lg border border-neutral-200 bg-white">
+    <Card padding="none">
       <div className="flex items-center border-b border-neutral-200 px-6 py-4">
         <h2 className="text-base font-semibold text-neutral-900">Códigos de descuento</h2>
       </div>
@@ -631,7 +634,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
           </div>
         ))}
         {!isLoading && descuentos?.length === 0 && (
-          <div className="px-4 py-8 text-center text-sm text-neutral-500">No hay códigos de descuento.</div>
+          <EmptyState bare message="No hay códigos de descuento." />
         )}
         {!isLoading && descuentos?.map((d) => (
           <div key={d.id} className={ROW_GRID}>
@@ -647,7 +650,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
             </div>
             <div className={`${DATA_CELL} flex gap-2`}>
               <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
-              <Button variant="outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
             </div>
           </div>
         ))}
@@ -673,7 +676,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
               Cancelar
             </Button>
             <Button
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive-solid"
               onClick={() => {
                 if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
                 setDeleteConfirmOpen(false);
@@ -708,12 +711,10 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
             </div>
             {editing && (
               <div className="flex items-center gap-2">
-                <input
+                <Checkbox
                   id="d-activo"
-                  type="checkbox"
                   checked={dActivo}
-                  onChange={(e) => setDActivo(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-300"
+                  onCheckedChange={(checked) => setDActivo(checked)}
                 />
                 <label htmlFor="d-activo" className="text-sm font-medium text-neutral-700">Activo</label>
               </div>
@@ -728,7 +729,7 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </Card>
   );
 }
 
@@ -766,19 +767,16 @@ export default function EdicionDetailPage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold border border-gray-300 rounded-md bg-white text-gray-800 hover:bg-gray-100 transition-colors cursor-pointer mb-2"
-          onClick={() => navigate("/admin/ediciones")}
-        >
-          <ArrowLeft size={16} />
-          Ediciones
-        </button>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold text-neutral-900">{edicion.nombre}</h1>
-          <EstadoEdicion edicion={edicion} />
-        </div>
-      </div>
+      <PageHeader
+        backTo="/admin/ediciones"
+        backLabel="Ediciones"
+        title={
+          <span className="flex items-center gap-3">
+            {edicion.nombre}
+            <EstadoEdicion edicion={edicion} />
+          </span>
+        }
+      />
 
       <DatosGeneralesSection edicion={edicion} />
       <PreciosSection edicionId={edicion.id} />
@@ -786,7 +784,7 @@ export default function EdicionDetailPage() {
       <DescuentosSection edicionId={edicion.id} />
 
       {["pre-cata", "cata", "devolucion", "cerrada"].includes(edicion.estado) && (
-        <section className="rounded-lg border border-neutral-200 bg-white p-6">
+        <Card padding="md">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-neutral-900">Agrupación de muestras</h2>
@@ -802,10 +800,10 @@ export default function EdicionDetailPage() {
               Gestionar grupos →
             </Button>
           </div>
-        </section>
+        </Card>
       )}
 
-      <section className="rounded-lg border border-neutral-200 bg-white p-6">
+      <Card padding="md">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-neutral-900">Inscriptos</h2>
@@ -821,10 +819,10 @@ export default function EdicionDetailPage() {
             Ver inscriptos →
           </Button>
         </div>
-      </section>
+      </Card>
 
       {edicion.estado === "cata" && (
-        <section className="rounded-lg border border-neutral-200 bg-white p-6">
+        <Card padding="md">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-neutral-900">Panel de cata en vivo</h2>
@@ -840,7 +838,7 @@ export default function EdicionDetailPage() {
               Abrir panel →
             </Button>
           </div>
-        </section>
+        </Card>
       )}
     </div>
   );

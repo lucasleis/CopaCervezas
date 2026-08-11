@@ -9,6 +9,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FlightCard } from "@/components/ui/FlightCard";
 import type { EstadoVuelo as EstadoVueloBadge } from "@/components/ui/StatusBadge";
 import type { EdicionJuez } from "@/api/cata";
+import { PageHeader } from "@/components/PageHeader";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ESTADO_EDICION_LABEL: Record<EdicionJuez["estado"], string> = {
   "pre-cata": "Pre-cata",
@@ -63,31 +74,28 @@ export default function CataPage() {
   if (mostrarSelectorEdicion) {
     return (
       <div className="p-8">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-neutral-900">Mis competencias</h1>
-            {me && <p className="text-sm text-neutral-500">{me.email}</p>}
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="text-sm text-neutral-600 hover:text-neutral-900"
-          >
-            Cerrar sesión
-          </button>
-        </div>
+        <PageHeader
+          title="Mis competencias"
+          subtitle={me?.email}
+          actions={
+            <Button type="button" variant="quiet" onClick={logout}>
+              Cerrar sesión
+            </Button>
+          }
+        />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ediciones.map((ed) => (
-            <button
+            <Button
               key={ed.id}
               type="button"
+              variant="outline"
+              size="card"
               onClick={() => setEdicionSeleccionada(ed.id)}
-              className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-4 text-left hover:border-neutral-300 hover:shadow-sm"
             >
               <span className="text-base font-semibold text-neutral-900">{ed.nombre}</span>
               <span className="text-sm text-neutral-500">{ESTADO_EDICION_LABEL[ed.estado]}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -96,70 +104,61 @@ export default function CataPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            Mis Vuelos
-          </h1>
-          {me && (
-            <p className="text-sm text-neutral-500">{me.email}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-3">
-          {ediciones.length > 1 && (
-            <select
-              value={edicionId ?? ""}
-              onChange={(e) => setEdicionSeleccionada(e.target.value)}
-              className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm"
-            >
-              {ediciones.map((ed) => (
-                <option key={ed.id} value={ed.id}>
-                  {ed.nombre}
-                </option>
-              ))}
-            </select>
-          )}
-          <button
-            type="button"
-            onClick={logout}
-            className="text-sm text-neutral-600 hover:text-neutral-900"
-          >
-            Cerrar sesión
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Mis Vuelos"
+        subtitle={me?.email}
+        actions={
+          <>
+            {ediciones.length > 1 && (
+              <Select
+                value={edicionId ?? ""}
+                onValueChange={(value) => setEdicionSeleccionada(value as string)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccioná una edición">
+                    {(value: string | null) =>
+                      ediciones.find((ed) => ed.id === value)?.nombre ?? "Seleccioná una edición"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ediciones.map((ed) => (
+                    <SelectItem key={ed.id} value={ed.id}>
+                      {ed.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button type="button" variant="quiet" onClick={logout}>
+              Cerrar sesión
+            </Button>
+          </>
+        }
+      />
 
       {!edicionesLoading && !edicionesError && ediciones.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          No hay ninguna edición activa para catar en este momento.
-        </div>
+        <EmptyState message="No hay ninguna edición activa para catar en este momento." />
       )}
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-2.5 rounded-lg border border-neutral-200 p-4"
-            >
+            <Card key={i} padding="sm" className="flex flex-col gap-2.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-3 w-28" />
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudieron cargar los vuelos asignados.
-        </div>
+        <EmptyState variant="error" message="No se pudieron cargar los vuelos asignados." />
       )}
 
       {!isLoading && !isError && vuelos?.length === 0 && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          No tenés vuelos asignados todavía.
-        </div>
+        <EmptyState message="No tenés vuelos asignados todavía." />
       )}
 
       {!isLoading && !isError && vuelos && vuelos.length > 0 && (
