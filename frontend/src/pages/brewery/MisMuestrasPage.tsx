@@ -3,6 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useEdicionActivaCerveceria } from "@/hooks/useEdicionActivaCerveceria";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { getEdicionesDisponiblesCerveceria } from "@/api/inscripcion";
 
 export default function MisMuestrasPage() {
@@ -40,10 +44,8 @@ export default function MisMuestrasPage() {
     (edicionesDisponibles?.length ?? 0) === 0;
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-neutral-900">Mis Muestras</h1>
-      </div>
+    <PageContainer variant="public">
+      <PageHeader variant="public" title="Mis Muestras" />
 
       {isLoading && (
         <div className="space-y-2">
@@ -53,16 +55,10 @@ export default function MisMuestrasPage() {
         </div>
       )}
 
-      {isError && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-red-500">
-          No se pudieron cargar tus competencias.
-        </div>
-      )}
+      {isError && <EmptyState variant="error" message="No se pudieron cargar tus competencias." />}
 
       {!isLoading && !isError && noHayNada && (
-        <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-          No hay competencias disponibles en este momento.
-        </div>
+        <EmptyState message="No hay competencias disponibles en este momento." />
       )}
 
       {!isLoading && !isError && !noHayNada && (
@@ -72,12 +68,10 @@ export default function MisMuestrasPage() {
               Mis competencias
             </h2>
             {ediciones.length === 0 && (
-              <div className="rounded-lg border border-neutral-200 bg-white px-4 py-12 text-center text-sm text-neutral-500">
-                No estás inscripto en ninguna competencia activa.
-              </div>
+              <EmptyState message="No estás inscripto en ninguna competencia activa." />
             )}
             {ediciones.length > 0 && (
-              <div className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
+              <Card padding="none" className="divide-y divide-neutral-200">
                 {ediciones.map((edicion) => (
                   <div
                     key={edicion.id}
@@ -89,7 +83,7 @@ export default function MisMuestrasPage() {
                     </Button>
                   </div>
                 ))}
-              </div>
+              </Card>
             )}
           </div>
 
@@ -98,7 +92,7 @@ export default function MisMuestrasPage() {
               <h2 className="mb-3 text-lg font-semibold text-neutral-900">
                 Competencias disponibles
               </h2>
-              <div className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
+              <Card padding="none" className="divide-y divide-neutral-200">
                 {edicionesDisponibles!.map((edicion) => (
                   <div
                     key={edicion.id}
@@ -110,11 +104,11 @@ export default function MisMuestrasPage() {
                     </Button>
                   </div>
                 ))}
-              </div>
+              </Card>
             </div>
           )}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
