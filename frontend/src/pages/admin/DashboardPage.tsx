@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/PageHeader";
+import { PageContainer } from "@/components/PageContainer";
 
 function formatFecha(iso: string | null): string {
   if (!iso) return "—";
@@ -33,7 +34,7 @@ export default function DashboardPage() {
   const edicionesEnCata = (ediciones ?? []).filter((e) => e.estado === "cata");
 
   return (
-    <div className="p-8">
+    <PageContainer>
       <PageHeader title="Dashboard" />
 
       <Card padding="md">
@@ -76,6 +77,6 @@ export default function DashboardPage() {
           </Card>
         )}
       </Card>
-    </div>
+    </PageContainer>
   );
 }
