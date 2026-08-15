@@ -328,17 +328,29 @@ func (s *Service) AprobarMuestra(ctx context.Context, edicionID, orgID, muestraI
 	return result, nil
 }
 
-func (s *Service) UpdateEstadoPago(ctx context.Context, cerveceriaID, orgID uuid.UUID, estadoPago db.EstadoPagoEnum) (db.Cerveceria, error) {
+// UpdateEstadoPago propaga el estado de pago a todas las muestras activas de la
+// cervecería (estado_pago vive en muestras desde 000022_lle24_schema). Si la
+// cervecería no tiene muestras activas, el UPDATE no afecta filas pero no es un
+// error: se verifica antes que la cervecería exista para distinguir ese caso del
+// de "cervecería inexistente".
+func (s *Service) UpdateEstadoPago(ctx context.Context, cerveceriaID, orgID uuid.UUID, estadoPago db.EstadoPagoEnum) ([]db.Muestra, error) {
+	if _, err := s.queries.GetCerveceriaByIDOrg(ctx, db.GetCerveceriaByIDOrgParams{
+		ID:    cerveceriaID,
+		OrgID: orgID,
+	}); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrCerveceriaNotFoundByID
+		}
+		return nil, fmt.Errorf("inscription: update estado pago: get cerveceria: %w", err)
+	}
+
 	result, err := s.queries.UpdateCerveceriaEstadoPago(ctx, db.UpdateCerveceriaEstadoPagoParams{
-		ID:         cerveceriaID,
-		OrgID:      orgID,
-		EstadoPago: estadoPago,
+		CerveceriaID: cerveceriaID,
+		OrgID:        orgID,
+		EstadoPago:   estadoPago,
 	})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return db.Cerveceria{}, ErrCerveceriaNotFoundByID
-		}
-		return db.Cerveceria{}, fmt.Errorf("inscription: update estado pago: %w", err)
+		return nil, fmt.Errorf("inscription: update estado pago: %w", err)
 	}
 	return result, nil
 }

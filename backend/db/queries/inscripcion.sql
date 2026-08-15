@@ -22,8 +22,8 @@ FROM ediciones e
 WHERE e.org_id = $1 AND e.id = $2 AND e.estado = 'inscripcion';
 
 -- name: InscribirCerveceria :one
-INSERT INTO cervecerias (id, usuario_id, edicion_id, org_id, nombre_comercial, estado_pago)
-SELECT $1, $2, $3, $4, TRIM(CONCAT_WS(' ', u.nombre, u.apellido)), 'pendiente'
+INSERT INTO cervecerias (id, usuario_id, edicion_id, org_id, nombre_comercial)
+SELECT $1, $2, $3, $4, TRIM(CONCAT_WS(' ', u.nombre, u.apellido))
 FROM usuarios u
 WHERE u.id = $2
 ON CONFLICT (usuario_id, edicion_id) DO NOTHING
@@ -55,7 +55,7 @@ SELECT
     e.nombre AS estilo_nombre,
     c.id AS cerveceria_id,
     c.nombre_comercial AS cerveceria_nombre,
-    c.estado_pago,
+    m.estado_pago,
     u.email AS cerveceria_email
 FROM muestras m
 JOIN estilos e ON e.id = m.estilo_id
@@ -106,8 +106,11 @@ SET aprobada = $4, updated_at = NOW()
 WHERE id = $1 AND edicion_id = $2 AND org_id = $3
 RETURNING *;
 
--- name: UpdateCerveceriaEstadoPago :one
-UPDATE cervecerias
+-- name: UpdateCerveceriaEstadoPago :many
+-- estado_pago vive en muestras (000022_lle24_schema); este UPDATE propaga el estado
+-- de pago a todas las muestras activas de la cervecería, preservando el contrato del
+-- endpoint PATCH /admin/cervecerias/:id/estado-pago (opera por cerveceriaID).
+UPDATE muestras
 SET estado_pago = $2, updated_at = NOW()
-WHERE id = $1 AND org_id = $3
+WHERE cerveceria_id = $1 AND org_id = $3 AND activa = true
 RETURNING *;

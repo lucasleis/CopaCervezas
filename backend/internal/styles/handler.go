@@ -31,6 +31,8 @@ type estiloResponse struct {
 	SubestiloDe           *string         `json:"subestilo_de"`
 	RequiereInfoAdicional bool            `json:"requiere_info_adicional"`
 	CamposInfoAdicional   json.RawMessage `json:"campos_info_adicional"`
+	GuiaID                string          `json:"guia_id"`
+	EsPersonalizado       bool            `json:"es_personalizado"`
 }
 
 type estiloCreadoResponse struct {
@@ -50,12 +52,14 @@ type similarResponse struct {
 	Nombre string `json:"nombre"`
 }
 
-func toEstiloResponse(id uuid.UUID, orgID uuid.NullUUID, codigo, nombre string, subestiloDe uuid.NullUUID, requiereInfo bool, campos pqtype.NullRawMessage) estiloResponse {
+func toEstiloResponse(id uuid.UUID, orgID uuid.NullUUID, codigo, nombre string, subestiloDe uuid.NullUUID, requiereInfo bool, campos pqtype.NullRawMessage, guiaID uuid.UUID, esPersonalizado bool) estiloResponse {
 	r := estiloResponse{
 		ID:                    id.String(),
 		Codigo:                codigo,
 		Nombre:                nombre,
 		RequiereInfoAdicional: requiereInfo,
+		GuiaID:                guiaID.String(),
+		EsPersonalizado:       esPersonalizado,
 	}
 	if orgID.Valid {
 		s := orgID.UUID.String()
@@ -134,7 +138,7 @@ func (h *Handler) List(c echo.Context) error {
 	}
 	result := make([]estiloResponse, len(rows))
 	for i, r := range rows {
-		result[i] = toEstiloResponse(r.ID, r.OrgID, r.Codigo, r.Nombre, r.SubestiloDe, r.RequiereInfoAdicional, r.CamposInfoAdicional)
+		result[i] = toEstiloResponse(r.ID, r.OrgID, r.Codigo, r.Nombre, r.SubestiloDe, r.RequiereInfoAdicional, r.CamposInfoAdicional, r.GuiaID, r.EsPersonalizado)
 	}
 	return respond(c, http.StatusOK, result)
 }
@@ -165,7 +169,7 @@ func (h *Handler) listCatalogo(c echo.Context) error {
 	}
 	result := make([]estiloResponse, len(rows))
 	for i, r := range rows {
-		result[i] = toEstiloResponse(r.ID, r.OrgID, r.Codigo, r.Nombre, r.SubestiloDe, r.RequiereInfoAdicional, r.CamposInfoAdicional)
+		result[i] = toEstiloResponse(r.ID, r.OrgID, r.Codigo, r.Nombre, r.SubestiloDe, r.RequiereInfoAdicional, r.CamposInfoAdicional, r.GuiaID, r.EsPersonalizado)
 	}
 	return respond(c, http.StatusOK, result)
 }
@@ -190,6 +194,9 @@ func (h *Handler) Create(c echo.Context) error {
 		}
 		if errors.Is(err, ErrCodigoDuplicado) {
 			return fail(c, http.StatusConflict, "CODIGO_DUPLICADO", "Ya existe un estilo con ese código en esta organización")
+		}
+		if errors.Is(err, ErrGuiaIDRequerido) {
+			return fail(c, http.StatusUnprocessableEntity, "GUIA_ID_REQUERIDO", "Debe especificarse guia_id")
 		}
 		slog.Error("create estilo failed", "error", err, "org_id", orgID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear el estilo")

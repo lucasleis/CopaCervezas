@@ -28,6 +28,9 @@ var ErrTipoCampoInvalido = errors.New("styles: tipo de campo inválido")
 // ErrClaveCampoInvalida se retorna cuando la clave de un campo no cumple el formato snake_case.
 var ErrClaveCampoInvalida = errors.New("styles: clave de campo inválida, debe ser snake_case")
 
+// ErrGuiaIDRequerido se retorna cuando no se especifica la guía de estilos al crear un estilo.
+var ErrGuiaIDRequerido = errors.New("styles: guia_id es requerido")
+
 // ErrEstiloEnUso se retorna al intentar eliminar un estilo referenciado por muestras o subestilos.
 var ErrEstiloEnUso = errors.New("styles: el estilo tiene muestras o subestilos asociados")
 
@@ -61,6 +64,7 @@ type CreateEstiloRequest struct {
 	SubestiloDe           *uuid.UUID `json:"subestilo_de"`
 	RequiereInfoAdicional bool       `json:"requiere_info_adicional"`
 	ConfirmarSimilitud    bool       `json:"confirmar_similitud"`
+	GuiaID                uuid.UUID  `json:"guia_id"`
 }
 
 type UpdateEstiloRequest struct {
@@ -98,6 +102,10 @@ func (s *Service) ListEstilosCatalogo(ctx context.Context, orgID uuid.UUID) ([]d
 }
 
 func (s *Service) CreateEstilo(ctx context.Context, orgID uuid.UUID, req CreateEstiloRequest) (db.Estilo, error) {
+	if req.GuiaID == uuid.Nil {
+		return db.Estilo{}, ErrGuiaIDRequerido
+	}
+
 	if !req.ConfirmarSimilitud {
 		similares, err := s.queries.SearchEstilosSimilares(ctx, db.SearchEstilosSimilaresParams{
 			OrgID: uuid.NullUUID{UUID: orgID, Valid: true},
@@ -127,6 +135,10 @@ func (s *Service) CreateEstilo(ctx context.Context, orgID uuid.UUID, req CreateE
 		Nombre:                req.Nombre,
 		SubestiloDe:           toNullUUID(req.SubestiloDe),
 		RequiereInfoAdicional: req.RequiereInfoAdicional,
+		GuiaID:                req.GuiaID,
+		// Todo estilo creado por una org (org_id != NULL) es, por definición, un
+		// estilo personalizado — el catálogo base (org_id NULL) se carga por seed/migración.
+		EsPersonalizado: true,
 	})
 	if err != nil {
 		return db.Estilo{}, fmt.Errorf("styles: create estilo: %w", err)

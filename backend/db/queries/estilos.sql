@@ -1,28 +1,28 @@
 -- name: ListEstilos :many
-SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional
+SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional, guia_id, es_personalizado
 FROM estilos
 WHERE org_id IS NULL OR org_id = $1
 ORDER BY codigo ASC;
 
 -- name: ListEstilosOrg :many
-SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional
+SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional, guia_id, es_personalizado
 FROM estilos
 WHERE org_id = $1
 ORDER BY codigo ASC;
 
 -- name: GetEstilo :one
-SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional
+SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional, guia_id, es_personalizado
 FROM estilos
 WHERE id = $1;
 
 -- name: GetEstiloByCodigoOrg :one
-SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional
+SELECT id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional, guia_id, es_personalizado
 FROM estilos
 WHERE org_id = $1 AND codigo = $2;
 
 -- name: CreateEstilo :one
-INSERT INTO estilos (id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO estilos (id, org_id, codigo, nombre, subestilo_de, requiere_info_adicional, campos_info_adicional, guia_id, es_personalizado)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING *;
 
 -- name: UpdateEstilo :one

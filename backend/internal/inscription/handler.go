@@ -370,9 +370,11 @@ func (h *Handler) InscribirCerveceria(c echo.Context) error {
 	if err != nil {
 		return handleMuestraError(c, err, "inscribir cerveceria failed")
 	}
+	// La cervecería recién creada todavía no tiene muestras; estado_pago vive en
+	// muestras (000022_lle24_schema) y su default es 'pendiente'.
 	return respond(c, http.StatusCreated, cerveceriaInscritaResponse{
 		ID:     cerveceria.ID.String(),
-		Estado: string(cerveceria.EstadoPago),
+		Estado: string(db.EstadoPagoEnumPendiente),
 	})
 }
 
@@ -605,8 +607,9 @@ func (h *Handler) UpdateEstadoPago(c echo.Context) error {
 	if req.EstadoPago != "pendiente" && req.EstadoPago != "pagado" {
 		return fail(c, http.StatusUnprocessableEntity, "ESTADO_PAGO_INVALIDO", "estado_pago debe ser 'pendiente' o 'pagado'")
 	}
-	cerveceria, err := h.svc.UpdateEstadoPago(c.Request().Context(), cerveceriaID, orgID, db.EstadoPagoEnum(req.EstadoPago))
-	if err != nil {
+	// estado_pago vive en muestras (000022_lle24_schema); el servicio propaga el nuevo
+	// estado a todas las muestras activas de la cervecería y las devuelve.
+	if _, err := h.svc.UpdateEstadoPago(c.Request().Context(), cerveceriaID, orgID, db.EstadoPagoEnum(req.EstadoPago)); err != nil {
 		if errors.Is(err, ErrCerveceriaNotFoundByID) || errors.Is(err, sql.ErrNoRows) {
 			return fail(c, http.StatusNotFound, "CERVECERIA_NOT_FOUND", "La cervecería solicitada no existe")
 		}
@@ -614,7 +617,7 @@ func (h *Handler) UpdateEstadoPago(c echo.Context) error {
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Ocurrió un error inesperado")
 	}
 	return respond(c, http.StatusOK, cerveceriaEstadoPagoResponse{
-		ID:         cerveceria.ID.String(),
-		EstadoPago: string(cerveceria.EstadoPago),
+		ID:         cerveceriaID.String(),
+		EstadoPago: req.EstadoPago,
 	})
 }
