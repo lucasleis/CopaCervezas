@@ -149,6 +149,27 @@ export async function getMuestrasCerveceria(edicionId: string): Promise<Muestra[
   return response.data.data;
 }
 
+export interface MuestraAnterior {
+  id: string;
+  nombre_comercial: string;
+  estilo_id: string;
+  estilo_codigo: string;
+  estilo_nombre: string;
+  edicion_nombre: string;
+  info_adicional: Record<string, string | boolean> | null;
+  cuenta_premio_mejor_cerveceria: boolean;
+  comentarios_adicionales: string | null;
+}
+
+export async function getMuestrasAnterioresCerveceria(
+  edicionId: string
+): Promise<MuestraAnterior[]> {
+  const response = await apiClient.get<ApiResponse<MuestraAnterior[]>>(
+    `/api/v1/cerveceria/ediciones/${edicionId}/muestras-anteriores`
+  );
+  return response.data.data;
+}
+
 export async function createMuestra(
   edicionId: string,
   data: CreateMuestraInput

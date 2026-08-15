@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, CircleDashed, CircleSlash, PlusCircle } from "lucide-react";
@@ -13,14 +13,11 @@ import { PageHeader } from "@/components/PageHeader";
 import {
   deleteMuestra,
   getEstilosCatalogo,
+  getMuestrasAnterioresCerveceria,
   getMuestrasCerveceria,
   type Muestra,
 } from "@/api/inscripcion";
 import MuestraDialog from "@/components/brewery/MuestraDialog";
-
-// TODO: no hay endpoint que exponga max_muestras_por_cerveceria a la
-// cervecería todavía — se hardcodea hasta que exista.
-const MAX_MUESTRAS = 3;
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -53,9 +50,13 @@ function EstadoBadge({ muestra }: { muestra: Muestra }) {
 export default function MisMuestrasEdicionPage() {
   const { edicion_id: edicionIdParam } = useParams<{ edicion_id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [muestraEditando, setMuestraEditando] = useState<Muestra | null>(null);
+
+  const maxMuestras: number =
+    (location.state as { max_muestras?: number } | null)?.max_muestras ?? 3;
 
   const edicionId =
     edicionIdParam && UUID_REGEX.test(edicionIdParam) ? edicionIdParam : null;
@@ -83,6 +84,12 @@ export default function MisMuestrasEdicionPage() {
   const { data: estilos } = useQuery({
     queryKey: ["estilos-catalogo"],
     queryFn: getEstilosCatalogo,
+    enabled: !!edicionId,
+  });
+
+  const { data: muestrasAnteriores } = useQuery({
+    queryKey: ["muestras-anteriores-cerveceria", edicionId],
+    queryFn: () => getMuestrasAnterioresCerveceria(edicionId as string),
     enabled: !!edicionId,
   });
 
@@ -129,7 +136,7 @@ export default function MisMuestrasEdicionPage() {
         backTo="/mis-muestras"
         backLabel="Volver"
         title={titulo}
-        subtitle={!isLoading && !isError && `${activasCount} de ${MAX_MUESTRAS} muestras`}
+        subtitle={!isLoading && !isError && `${activasCount} de ${maxMuestras} muestras`}
         actions={
           <Button onClick={handleNuevaMuestra} className="shrink-0">
             <PlusCircle className="size-4" aria-hidden="true" />
@@ -220,6 +227,50 @@ export default function MisMuestrasEdicionPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {(muestrasAnteriores?.length ?? 0) > 0 && activasCount < maxMuestras && (
+        <section className="mt-6">
+          <h2 className="mb-3 text-sm font-semibold text-neutral-500 uppercase tracking-wide">
+            Repetir una cerveza de edición anterior
+          </h2>
+          <Card padding="none" className="divide-y divide-neutral-200">
+            {muestrasAnteriores!.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left hover:bg-neutral-50 transition-colors"
+                onClick={() => {
+                  // Pre-cargar el dialog con los datos de la muestra anterior
+                  // MuestraDialog recibe muestraExistente: Muestra | null
+                  // Necesitamos convertir MuestraAnterior a Muestra parcial
+                  setMuestraEditando({
+                    id: "", // nuevo — el backend asignará el ID real
+                    nombre_comercial: m.nombre_comercial,
+                    estilo_id: m.estilo_id,
+                    estilo_codigo: m.estilo_codigo,
+                    estilo_nombre: m.estilo_nombre,
+                    info_adicional: m.info_adicional,
+                    cuenta_premio_mejor_cerveceria: m.cuenta_premio_mejor_cerveceria,
+                    comentarios_adicionales: m.comentarios_adicionales,
+                    aprobada: false,
+                    activa: true,
+                    cod_anonimo: null,
+                  } as Muestra);
+                  setDialogOpen(true);
+                }}
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-neutral-900">{m.nombre_comercial}</p>
+                  <p className="text-sm text-neutral-500">
+                    {m.estilo_codigo} — {m.estilo_nombre} · {m.edicion_nombre}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm text-primary">Usar →</span>
+              </button>
+            ))}
+          </Card>
+        </section>
       )}
 
       <MuestraDialog

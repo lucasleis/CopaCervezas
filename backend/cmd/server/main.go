@@ -168,6 +168,7 @@ func main() {
 	cerveceria.GET("/ediciones/disponibles/:id", inscriptionHandler.GetEdicionDisponibleDetalle)
 	cerveceria.POST("/ediciones/:id/inscribirse", inscriptionHandler.InscribirCerveceria)
 	cerveceria.GET("/ediciones/:id/muestras", inscriptionHandler.ListMuestras)
+	cerveceria.GET("/ediciones/:id/muestras-anteriores", inscriptionHandler.GetMuestrasAnteriores)
 	cerveceria.POST("/ediciones/:id/muestras", inscriptionHandler.CreateMuestra)
 	cerveceria.PATCH("/ediciones/:id/muestras/:muestra_id", inscriptionHandler.UpdateMuestra)
 	cerveceria.DELETE("/ediciones/:id/muestras/:muestra_id", inscriptionHandler.DeleteMuestra)

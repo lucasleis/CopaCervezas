@@ -175,6 +175,21 @@ func (s *Service) ListMuestrasCerveceria(ctx context.Context, usuarioID, edicion
 	return result, nil
 }
 
+// ListMuestrasAnterioresCerveceria trae las muestras activas de otras ediciones
+// para el mismo usuario (no cerveceria_id, ya que puede tener un registro de
+// cervecería distinto por edición), excluyendo la edición actual.
+func (s *Service) ListMuestrasAnterioresCerveceria(ctx context.Context, usuarioID, edicionID, orgID uuid.UUID) ([]db.ListMuestrasAnterioresCerveceriaRow, error) {
+	result, err := s.queries.ListMuestrasAnterioresCerveceria(ctx, db.ListMuestrasAnterioresCerveceriaParams{
+		UsuarioID: usuarioID,
+		OrgID:     orgID,
+		EdicionID: edicionID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("inscription: list muestras anteriores cerveceria: %w", err)
+	}
+	return result, nil
+}
+
 func (s *Service) CreateMuestra(ctx context.Context, usuarioID, edicionID, orgID uuid.UUID, input MuestraInput) (db.Muestra, error) {
 	edicion, err := s.verifyEdicionEnInscripcion(ctx, edicionID, orgID)
 	if err != nil {

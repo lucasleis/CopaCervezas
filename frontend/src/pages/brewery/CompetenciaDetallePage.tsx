@@ -62,7 +62,10 @@ export default function CompetenciaDetallePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ediciones-activas-cerveceria"] });
       queryClient.invalidateQueries({ queryKey: ["ediciones-disponibles-cerveceria"] });
-      navigate("/mis-muestras");
+      navigate(`/mis-muestras/${edicionId}`, {
+        replace: true,
+        state: { max_muestras: detalle?.max_muestras_por_cerveceria ?? 3 },
+      });
     },
     onError: () => {
       toast.error("No se pudo completar la inscripción. Intentá de nuevo.");

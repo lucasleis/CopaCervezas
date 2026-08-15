@@ -114,3 +114,24 @@ UPDATE muestras
 SET estado_pago = $2, updated_at = NOW()
 WHERE cerveceria_id = $1 AND org_id = $3 AND activa = true
 RETURNING *;
+
+-- name: ListMuestrasAnterioresCerveceria :many
+SELECT
+    m.id,
+    m.nombre_comercial,
+    m.info_adicional,
+    m.cuenta_premio_mejor_cerveceria,
+    m.comentarios_adicionales,
+    e.id AS estilo_id,
+    e.nombre AS estilo_nombre,
+    e.codigo AS estilo_codigo,
+    ed.nombre AS edicion_nombre
+FROM muestras m
+JOIN estilos e ON e.id = m.estilo_id
+JOIN ediciones ed ON ed.id = m.edicion_id
+JOIN cervecerias c ON c.id = m.cerveceria_id
+WHERE c.usuario_id = $1
+  AND m.org_id = $2
+  AND m.activa = true
+  AND m.edicion_id != $3
+ORDER BY ed.anio DESC, m.created_at DESC;

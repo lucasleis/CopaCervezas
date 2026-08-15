@@ -59,7 +59,9 @@ export default function MuestraDialog({
   muestraExistente,
 }: Props) {
   const queryClient = useQueryClient();
-  const isEdit = !!muestraExistente;
+  // muestraExistente con id vacío ("") es el caso de "repetir cerveza de una
+  // edición anterior" — se trata como creación, no edición.
+  const isEdit = !!muestraExistente?.id;
 
   // Solo estilos "hoja" (sin hijos) se pueden inscribir directamente.
   const estilosHoja = useMemo(() => {

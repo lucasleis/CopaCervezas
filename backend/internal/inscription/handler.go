@@ -422,6 +422,60 @@ func (h *Handler) ListMuestras(c echo.Context) error {
 	return respond(c, http.StatusOK, result)
 }
 
+type muestraAnteriorResponse struct {
+	ID                          string          `json:"id"`
+	NombreComercial             string          `json:"nombre_comercial"`
+	EstiloID                    string          `json:"estilo_id"`
+	EstiloCodigo                string          `json:"estilo_codigo"`
+	EstiloNombre                string          `json:"estilo_nombre"`
+	EdicionNombre               string          `json:"edicion_nombre"`
+	InfoAdicional               json.RawMessage `json:"info_adicional"`
+	CuentaPremioMejorCerveceria bool            `json:"cuenta_premio_mejor_cerveceria"`
+	ComentariosAdicionales      *string         `json:"comentarios_adicionales"`
+}
+
+func (h *Handler) GetMuestrasAnteriores(c echo.Context) error {
+	if !requireBrewery(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	edicionID, err := parseUUID(c, "id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	rows, err := h.svc.ListMuestrasAnterioresCerveceria(c.Request().Context(), usuarioID, edicionID, orgID)
+	if err != nil {
+		return handleMuestraError(c, err, "get muestras anteriores cerveceria failed")
+	}
+	result := make([]muestraAnteriorResponse, len(rows))
+	for i, r := range rows {
+		item := muestraAnteriorResponse{
+			ID:                          r.ID.String(),
+			NombreComercial:             r.NombreComercial,
+			EstiloID:                    r.EstiloID.String(),
+			EstiloCodigo:                r.EstiloCodigo,
+			EstiloNombre:                r.EstiloNombre,
+			EdicionNombre:               r.EdicionNombre,
+			CuentaPremioMejorCerveceria: r.CuentaPremioMejorCerveceria,
+		}
+		if r.InfoAdicional.Valid {
+			item.InfoAdicional = r.InfoAdicional.RawMessage
+		}
+		if r.ComentariosAdicionales.Valid {
+			item.ComentariosAdicionales = &r.ComentariosAdicionales.String
+		}
+		result[i] = item
+	}
+	return respond(c, http.StatusOK, result)
+}
+
 func (h *Handler) CreateMuestra(c echo.Context) error {
 	if !requireBrewery(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol brewery")
