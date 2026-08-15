@@ -408,8 +408,10 @@ function AutoagruparDialog({
           <DialogTitle>Auto-agrupar muestras</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-neutral-600">
-          Esta acción agrupará automáticamente todas las muestras sin grupo por estilo. Los
-          grupos existentes no se modificarán. ¿Confirmás?
+          Esta acción recalcula la agrupación completa. Los estilos con 10 o más muestras
+          reciben grupo propio; los demás quedan en "Sin grupo" para asignación manual. Si un
+          estilo que antes tenía grupo ahora tiene menos de 10 muestras, sus muestras vuelven a
+          "Sin grupo". ¿Confirmás?
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={mutation.isPending}>
@@ -437,10 +439,16 @@ function SinGrupoPanel({
 }) {
   const queryClient = useQueryClient();
 
-  const { data: muestras, isLoading } = useQuery({
+  const { data: muestrasRaw, isLoading } = useQuery({
     queryKey: ["muestras-sin-grupo", edicionId],
     queryFn: () => listMuestrasSinGrupo(edicionId),
   });
+
+  // El backend ya ordena por estilo.codigo ascendente; se preserva el orden acá
+  // en lugar de reordenar, salvo que llegue sin ordenar.
+  const muestras = muestrasRaw
+    ? [...muestrasRaw].sort((a, b) => a.estilo_codigo.localeCompare(b.estilo_codigo))
+    : muestrasRaw;
 
   const moverMutation = useMutation({
     mutationFn: (params: { muestraId: string; grupoId: string }) =>
@@ -547,10 +555,18 @@ export default function GruposPage() {
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-neutral-900">Grupos</h2>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-sm font-semibold text-neutral-900">Grupos</h2>
+                {!bloqueado && (
+                  <p className="mt-1 max-w-md text-xs text-neutral-500">
+                    La autoagrupación asigna grupo propio a los estilos con 10 o más muestras. El
+                    resto queda en la bandeja "Sin grupo" para asignación manual.
+                  </p>
+                )}
+              </div>
               {!bloqueado && (
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-2">
                   <Button variant="default" size="sm" onClick={() => setAutoagruparOpen(true)}>
                     Auto-agrupar
                   </Button>

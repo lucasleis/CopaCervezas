@@ -99,8 +99,9 @@ SET grupo_id = NULL, asignacion_manual = false, updated_at = NOW()
 WHERE id = $1 AND activa = true;
 
 -- name: ListEstilosConMuestras :many
--- Para la autoasignación: agrupa muestras activas por estilo y cuenta cuántas hay.
--- Devuelve solo estilos que tienen al menos 1 muestra activa en la edición.
+-- Para la autoasignación: agrupa todas las muestras activas de la edición por estilo
+-- (código de estilo completo, con letra incluida) y cuenta cuántas hay, sin importar
+-- si ya tienen un grupo asignado de una corrida anterior.
 SELECT
     e.id AS estilo_id,
     e.codigo AS estilo_codigo,
@@ -108,13 +109,37 @@ SELECT
     COUNT(m.id) AS cant_muestras
 FROM muestras m
 JOIN estilos e ON e.id = m.estilo_id
-WHERE m.edicion_id = $1 AND m.org_id = $2 AND m.activa = true AND m.grupo_id IS NULL
+WHERE m.edicion_id = $1 AND m.org_id = $2 AND m.activa = true
 GROUP BY e.id, e.codigo, e.nombre
 ORDER BY e.codigo ASC;
 
 -- name: AsignarGrupoMuestrasByEstilo :exec
--- Autoasignación: asigna todas las muestras de un estilo a un grupo.
--- Solo afecta muestras sin grupo asignado (grupo_id IS NULL).
+-- Autoasignación: asigna todas las muestras activas de un estilo a un grupo,
+-- sin importar el grupo que tuvieran asignado previamente.
 UPDATE muestras
 SET grupo_id = $3, updated_at = NOW()
-WHERE edicion_id = $1 AND estilo_id = $2 AND activa = true AND grupo_id IS NULL;
+WHERE edicion_id = $1 AND estilo_id = $2 AND activa = true;
+
+-- name: DesasignarGrupoMuestrasByEstilo :exec
+-- Autoasignación: quita el grupo de todas las muestras activas de un estilo
+-- (estilos con menos de 10 muestras activas quedan en la bandeja "sin grupo").
+UPDATE muestras
+SET grupo_id = NULL, asignacion_manual = false, updated_at = NOW()
+WHERE edicion_id = $1 AND estilo_id = $2 AND activa = true;
+
+-- name: GetGrupoByNombreEdicion :one
+-- Busca un grupo existente por nombre exacto dentro de la edición (para reutilizarlo
+-- en corridas repetidas de autoasignación).
+SELECT * FROM grupos WHERE edicion_id = $1 AND nombre = $2;
+
+-- name: FindGrupoVariosByEdicion :many
+-- Busca grupos "comodín" (nombre 'Varios' o variantes) en la edición, a eliminar
+-- antes de recalcular la autoasignación.
+SELECT * FROM grupos WHERE edicion_id = $1 AND nombre ILIKE 'varios%';
+
+-- name: DesasignarGrupoMuestrasByGrupo :exec
+-- Quita el grupo de todas las muestras activas que referencian un grupo dado
+-- (usado para desasociar muestras del grupo "Varios" antes de eliminarlo).
+UPDATE muestras
+SET grupo_id = NULL, asignacion_manual = false, updated_at = NOW()
+WHERE grupo_id = $1 AND activa = true;

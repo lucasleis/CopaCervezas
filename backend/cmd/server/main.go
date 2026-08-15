@@ -55,7 +55,7 @@ func main() {
 	}))
 
 	authHandler := auth.NewHandler(queries)
-	competitionSvc := competition.NewService(queries)
+	competitionSvc := competition.NewService(queries, sqlDB)
 	competitionHandler := competition.NewHandler(competitionSvc)
 	tastingSvc := tasting.NewService(queries)
 	hub := websocket.NewHub()
