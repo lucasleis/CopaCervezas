@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { login, getMe } from "@/api/auth";
@@ -74,6 +74,9 @@ export default function LoginPage() {
           <Button type="submit" variant="default" disabled={loading} className="w-full">
             {loading ? "Ingresando..." : "Ingresar"}
           </Button>
+          <Link to="/register" className="block text-center text-sm text-neutral-500 hover:text-neutral-700">
+            ¿Primera vez? Registrá tu cervecería
+          </Link>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </form>
       </div>

@@ -50,3 +50,43 @@ export async function selectOrg(orgId: string): Promise<void> {
   );
   setAccessToken(response.data.access_token);
 }
+
+export interface MessageResponse {
+  message: string;
+}
+
+export async function register(data: {
+  email: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+}): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/auth/register", data);
+  return response.data;
+}
+
+export async function verifyEmail(token: string): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/auth/verify-email", { token });
+  return response.data;
+}
+
+export async function forgotPassword(email: string): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/auth/forgot-password", { email });
+  return response.data;
+}
+
+export async function resetPassword(data: {
+  token: string;
+  password: string;
+}): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/auth/reset-password", data);
+  return response.data;
+}
+
+export async function setPassword(data: {
+  token: string;
+  password: string;
+}): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/auth/set-password", data);
+  return response.data;
+}
