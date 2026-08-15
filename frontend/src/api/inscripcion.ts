@@ -39,6 +39,8 @@ export interface Estilo {
   subestilo_de: string | null;
   requiere_info_adicional: boolean;
   campos_info_adicional: CamposSchema | null;
+  guia_id: string;
+  es_personalizado: boolean;
 }
 
 export interface EdicionCerveceria {
