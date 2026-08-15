@@ -2,21 +2,24 @@ module github.com/lucasleis/nivalis
 
 go 1.25.0
 
-require github.com/labstack/echo/v4 v4.15.4
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
+	github.com/joho/godotenv v1.5.1
+	github.com/labstack/echo/v4 v4.15.4
+	github.com/lib/pq v1.12.3
+	github.com/resend/resend-go/v2 v2.28.0
+	github.com/sqlc-dev/pqtype v0.3.0
+	golang.org/x/crypto v0.54.0
+)
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
-	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/labstack/gommon v0.5.0 // indirect
-	github.com/lib/pq v1.12.3 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.22 // indirect
-	github.com/sqlc-dev/pqtype v0.3.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect

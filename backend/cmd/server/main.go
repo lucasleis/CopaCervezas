@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/lucasleis/nivalis/internal/auth"
 	"github.com/lucasleis/nivalis/internal/competition"
 	"github.com/lucasleis/nivalis/internal/db"
+	"github.com/lucasleis/nivalis/internal/email"
 	"github.com/lucasleis/nivalis/internal/inscription"
 	custommiddleware "github.com/lucasleis/nivalis/internal/middleware"
 	"github.com/lucasleis/nivalis/internal/styles"
@@ -65,6 +67,26 @@ func main() {
 	stylesHandler := styles.NewHandler(stylesSvc)
 	inscriptionSvc := inscription.NewService(queries)
 	inscriptionHandler := inscription.NewHandler(inscriptionSvc)
+
+	var emailSender email.Sender
+	switch provider := os.Getenv("EMAIL_PROVIDER"); provider {
+	case "resend":
+		apiKey := os.Getenv("RESEND_API_KEY")
+		from := os.Getenv("EMAIL_FROM")
+		if apiKey == "" || from == "" {
+			slog.Error("RESEND_API_KEY y EMAIL_FROM son requeridos cuando EMAIL_PROVIDER=resend")
+			os.Exit(1)
+		}
+		emailSender = email.NewResendSender(apiKey, from)
+	case "ses":
+		emailSender = email.NewSESSender()
+	case "", "log":
+		emailSender = email.NewLogSender()
+	default:
+		slog.Error("EMAIL_PROVIDER inválido", "provider", provider, "validos", "resend | ses | log")
+		os.Exit(1)
+	}
+	slog.Info("email sender inicializado", "sender", fmt.Sprintf("%T", emailSender))
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
