@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 const navItems = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Ediciones", to: "/admin/ediciones" },
+  { label: "Jueces", to: "/admin/jueces" },
   { label: "Estilos", to: "/admin/estilos" },
 ];
 

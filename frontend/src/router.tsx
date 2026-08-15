@@ -21,6 +21,7 @@ import MisMuestrasPage from "@/pages/brewery/MisMuestrasPage";
 import MisMuestrasEdicionPage from "@/pages/brewery/MisMuestrasEdicionPage";
 import CompetenciaDetallePage from "@/pages/brewery/CompetenciaDetallePage";
 import EstilosPage from "@/pages/admin/EstilosPage";
+import JuecesPage from "@/pages/admin/JuecesPage";
 import InscriptosPage from "@/pages/admin/InscriptosPage";
 import GruposPage from "@/pages/admin/GruposPage";
 
@@ -180,6 +181,16 @@ export default function AppRouter() {
           <ProtectedRoute requiredRole="admin">
             <AdminLayout>
               <EstilosPage />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/jueces"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout>
+              <JuecesPage />
             </AdminLayout>
           </ProtectedRoute>
         }

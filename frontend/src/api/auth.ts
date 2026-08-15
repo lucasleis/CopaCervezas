@@ -90,3 +90,15 @@ export async function setPassword(data: {
   const response = await apiClient.post<MessageResponse>("/auth/set-password", data);
   return response.data;
 }
+
+export async function invitarJuez(data: {
+  email: string;
+  nombre: string;
+  apellido: string;
+}): Promise<MessageResponse> {
+  const response = await apiClient.post<MessageResponse>("/api/v1/admin/usuarios/invitar", {
+    ...data,
+    rol: "judge",
+  });
+  return response.data;
+}
