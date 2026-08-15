@@ -1,5 +1,5 @@
 -- name: GetUsuarioByEmail :one
-SELECT id, email, password_hash, created_at
+SELECT *
 FROM usuarios
 WHERE email = $1
 LIMIT 1;
@@ -31,3 +31,18 @@ WHERE id = $1;
 UPDATE refresh_tokens
 SET revocado = TRUE
 WHERE usuario_id = $1;
+
+-- name: CrearUsuario :one
+INSERT INTO usuarios (email, password_hash, nombre, apellido)
+VALUES ($1, $2, $3, $4)
+RETURNING *;
+
+-- name: MarcarEmailVerificado :exec
+UPDATE usuarios SET email_verificado = TRUE WHERE id = $1;
+
+-- name: UpdatePasswordHash :exec
+UPDATE usuarios SET password_hash = $1 WHERE id = $2;
+
+-- name: CrearUsuarioOrganizacion :exec
+INSERT INTO usuario_organizacion (usuario_id, org_id, rol)
+VALUES ($1, $2, $3);

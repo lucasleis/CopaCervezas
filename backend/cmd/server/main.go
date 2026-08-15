@@ -56,7 +56,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	authHandler := auth.NewHandler(queries)
 	competitionSvc := competition.NewService(queries, sqlDB)
 	competitionHandler := competition.NewHandler(competitionSvc)
 	tastingSvc := tasting.NewService(queries)
@@ -88,12 +87,23 @@ func main() {
 	}
 	slog.Info("email sender inicializado", "sender", fmt.Sprintf("%T", emailSender))
 
+	frontendBaseURL := os.Getenv("FRONTEND_BASE_URL")
+	if frontendBaseURL == "" {
+		frontendBaseURL = "http://localhost:5173"
+	}
+	authHandler := auth.NewHandler(queries, emailSender, frontendBaseURL)
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 	e.POST("/auth/login", authHandler.Login)
 	e.POST("/auth/refresh", authHandler.Refresh)
 	e.POST("/auth/logout", authHandler.Logout)
+	e.POST("/auth/register", authHandler.Register)
+	e.POST("/auth/verify-email", authHandler.VerifyEmail)
+	e.POST("/auth/forgot-password", authHandler.ForgotPassword)
+	e.POST("/auth/reset-password", authHandler.ResetPassword)
+	e.POST("/auth/set-password", authHandler.SetPassword)
 
 	protected := e.Group("")
 	protected.Use(custommiddleware.JWTMiddleware)
@@ -149,6 +159,8 @@ func main() {
 
 	admin.PATCH("/ediciones/:id/muestras/:muestra_id/grupo", competitionHandler.MoverMuestra)
 	admin.GET("/ediciones/:id/muestras/sin-grupo", competitionHandler.ListMuestrasSinGrupo)
+
+	admin.POST("/usuarios/invitar", authHandler.InvitarUsuario)
 
 	cerveceria := protected.Group("/api/v1/cerveceria")
 	cerveceria.GET("/ediciones", inscriptionHandler.GetEdicionesActivas)
