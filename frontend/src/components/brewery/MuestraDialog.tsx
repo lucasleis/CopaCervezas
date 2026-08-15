@@ -101,7 +101,11 @@ export default function MuestraDialog({
   const [formError, setFormError] = useState<string | null>(null);
 
   const selectedEstilo = estilosHoja.find((e) => e.id === selectedEstiloId);
-  const camposDinamicos = selectedEstilo?.campos_info_adicional ?? [];
+  // Solo mostrar campos visibles para la cervecería
+  // (visible_jueces = false son campos internos del organizador)
+  const camposDinamicos = (selectedEstilo?.campos_info_adicional ?? []).filter(
+    (c) => c.visible_jueces !== false
+  );
 
   function resetForm() {
     setSelectedEstiloId("");

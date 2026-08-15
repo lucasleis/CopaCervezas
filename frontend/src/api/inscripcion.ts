@@ -26,6 +26,7 @@ export interface CampoDefinicion {
   label: string;
   tipo: "text" | "textarea" | "boolean";
   obligatorio: boolean;
+  visible_jueces: boolean;
 }
 
 export type CamposSchema = CampoDefinicion[];

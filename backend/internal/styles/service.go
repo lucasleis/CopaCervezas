@@ -52,10 +52,11 @@ var tiposValidos = map[string]bool{
 }
 
 type CampoDef struct {
-	Clave       string `json:"clave"`
-	Label       string `json:"label"`
-	Tipo        string `json:"tipo"`
-	Obligatorio bool   `json:"obligatorio"`
+	Clave         string `json:"clave"`
+	Label         string `json:"label"`
+	Tipo          string `json:"tipo"`
+	Obligatorio   bool   `json:"obligatorio"`
+	VisibleJueces bool   `json:"visible_jueces"`
 }
 
 type CreateEstiloRequest struct {
