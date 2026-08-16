@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, CircleDashed, CircleSlash, PlusCircle } from "lucide-react";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -173,10 +174,11 @@ export default function MisMuestrasEdicionPage() {
       )}
 
       {isError && (
-        <div role="alert" className="rounded-xl border border-danger-100 bg-danger-50 px-6 py-12 text-center">
-          <p className="text-sm font-medium text-danger-700">No se pudieron cargar tus muestras</p>
-          <p className="mt-1 text-sm text-neutral-600">Intentá de nuevo en unos instantes.</p>
-        </div>
+        <Alert
+          variant="danger"
+          title="No se pudieron cargar tus muestras"
+          description="Intentá de nuevo en unos instantes."
+        />
       )}
 
       {!isLoading && !isError && muestras?.length === 0 && (
