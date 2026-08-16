@@ -206,14 +206,15 @@ function GrupoCard({
               className="h-8 w-48"
             />
           ) : (
-            <button
+            <Button
               type="button"
+              variant="ghost-inline"
               onClick={() => !bloqueado && setEditingNombre(true)}
-              className="truncate text-sm font-semibold text-neutral-900 hover:underline disabled:no-underline"
+              className="truncate text-sm font-semibold text-neutral-900"
               disabled={bloqueado}
             >
               {grupo.nombre}
-            </button>
+            </Button>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">

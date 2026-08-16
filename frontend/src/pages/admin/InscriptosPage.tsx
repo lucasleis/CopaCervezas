@@ -266,9 +266,10 @@ export default function InscriptosPage() {
                         {muestra.estilo_nombre}
                       </TableCell>
                       <TableCell className="px-4 py-3 whitespace-normal">
-                        <button
+                        <Button
                           type="button"
-                          className="text-left text-neutral-900 hover:underline"
+                          variant="ghost-inline"
+                          className="text-left text-neutral-900"
                           onClick={() => setExpandedId(expanded ? null : muestra.id)}
                         >
                           {muestra.nombre_comercial}
@@ -277,7 +278,7 @@ export default function InscriptosPage() {
                               {expanded ? "▲" : "▼"}
                             </span>
                           )}
-                        </button>
+                        </Button>
                       </TableCell>
                       <TableCell className="px-4 py-3 whitespace-normal">
                         <ColorDropdown
