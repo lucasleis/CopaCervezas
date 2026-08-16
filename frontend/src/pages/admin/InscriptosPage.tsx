@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FilterChips } from "@/components/ui/filter-chips";
 import {
   Table,
   TableBody,
@@ -172,40 +173,26 @@ export default function InscriptosPage() {
       />
 
       <div className="mb-4 flex flex-wrap gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-neutral-500">Estado de pago:</span>
-          {(["todos", "pendiente", "pagado"] as FiltroPago[]).map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setFiltroPago(opt)}
-              className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                filtroPago === opt
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-medium text-neutral-500">Aprobación:</span>
-          {(["todos", "pendiente", "aprobada"] as FiltroAprobacion[]).map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => setFiltroAprobacion(opt)}
-              className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${
-                filtroAprobacion === opt
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-        </div>
+        <FilterChips
+          label="Estado de pago:"
+          options={[
+            { value: "todos", label: "Todos" },
+            { value: "pendiente", label: "Pendiente" },
+            { value: "pagado", label: "Pagado" },
+          ]}
+          value={filtroPago}
+          onChange={setFiltroPago}
+        />
+        <FilterChips
+          label="Aprobación:"
+          options={[
+            { value: "todos", label: "Todos" },
+            { value: "pendiente", label: "Pendiente" },
+            { value: "aprobada", label: "Aprobada" },
+          ]}
+          value={filtroAprobacion}
+          onChange={setFiltroAprobacion}
+        />
       </div>
 
       <Card padding="none" className="overflow-hidden">
