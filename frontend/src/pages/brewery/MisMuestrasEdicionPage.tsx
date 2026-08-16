@@ -3,7 +3,6 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, CircleDashed, CircleSlash, PlusCircle } from "lucide-react";
-import { useEdicionActivaCerveceria } from "@/hooks/useEdicionActivaCerveceria";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { PageContainer } from "@/components/PageContainer";
 import { PageHeader } from "@/components/PageHeader";
 import {
   deleteMuestra,
+  getEdicionesCerveceria,
   getEstilosCatalogo,
   getMuestrasAnterioresCerveceria,
   getMuestrasCerveceria,
@@ -67,8 +67,11 @@ export default function MisMuestrasEdicionPage() {
     }
   }, [edicionId, navigate]);
 
-  const { ediciones } = useEdicionActivaCerveceria();
-  const edicionActual = ediciones.find((e) => e.id === edicionId);
+  const { data: ediciones } = useQuery({
+    queryKey: ["ediciones-cerveceria"],
+    queryFn: getEdicionesCerveceria,
+  });
+  const edicionActual = ediciones?.find((e) => e.id === edicionId);
   const titulo = edicionActual?.nombre ?? "Mis Muestras";
 
   const {
