@@ -180,6 +180,12 @@ func main() {
 	juez.POST("/ediciones/:edicion_id/evaluaciones", tastingHandler.CreateEvaluacion)
 	juez.GET("/ediciones/:edicion_id/evaluaciones", tastingHandler.GetEvaluacionesJuez)
 
+	// Catch-all: rutas no registradas bajo el grupo protected devuelven 404
+	// en lugar de 401 (que ocurre cuando el JWT middleware intercepta primero)
+	protected.Any("/*", func(c echo.Context) error {
+		return echo.ErrNotFound
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
