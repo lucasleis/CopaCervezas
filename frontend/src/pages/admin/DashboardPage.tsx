@@ -34,7 +34,14 @@ function EstadoBadge({ estado }: { estado: EstadoEdicion }) {
   );
 }
 
-const ESTADOS_ACTIVOS: EstadoEdicion[] = ["config", "inscripcion", "pre-cata", "cata"];
+const URGENCIA: Record<EstadoEdicion, number> = {
+  cata:        0,
+  "pre-cata":  1,
+  inscripcion: 2,
+  config:      3,
+  devolucion:  4,
+  cerrada:     5,
+};
 const ESTADOS_RECIENTES: EstadoEdicion[] = ["devolucion", "cerrada"];
 
 function accionEdicion(edicion: Edicion): { label: string; path: string } {
@@ -51,7 +58,9 @@ export default function DashboardPage() {
     queryFn: listEdiciones,
   });
 
-  const activas = (ediciones ?? []).filter((e) => ESTADOS_ACTIVOS.includes(e.estado));
+  const activas = (ediciones ?? [])
+    .filter((e) => ["config", "inscripcion", "pre-cata", "cata"].includes(e.estado))
+    .sort((a, b) => URGENCIA[a.estado] - URGENCIA[b.estado]);
   const recientes = (ediciones ?? []).filter((e) => ESTADOS_RECIENTES.includes(e.estado));
 
   return (
