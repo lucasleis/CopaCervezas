@@ -127,10 +127,13 @@ function DatosGeneralesSection({ edicion }: { edicion: Edicion }) {
           </div>
         </div>
         {formError && <p className="text-sm text-red-500">{formError}</p>}
-        <div className="flex justify-end">
-          <Button type="submit" disabled={mutation.isPending} className="w-[132px]">
-            {mutation.isPending ? "Guardando..." : "Guardar cambios"}
-          </Button>
+        <div className={`${ROW_GRID} pt-2`}>
+          <span className="col-span-4" />
+          <div>
+            <Button type="submit" disabled={mutation.isPending} className="w-[132px]">
+              {mutation.isPending ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </div>
         </div>
       </form>
     </Card>
@@ -783,26 +786,6 @@ export default function EdicionDetailPage() {
       <LugaresSection edicionId={edicion.id} />
       <DescuentosSection edicionId={edicion.id} />
 
-      {["pre-cata", "cata", "devolucion", "cerrada"].includes(edicion.estado) && (
-        <Card padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-neutral-900">Agrupación de muestras</h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Agrupá los estilos en grupos de premiación antes de la jornada de cata.
-              </p>
-            </div>
-            <Button
-              variant="default"
-              onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
-              className="w-[132px]"
-            >
-              Gestionar grupos →
-            </Button>
-          </div>
-        </Card>
-      )}
-
       <Card padding="md">
         <div className="flex items-center justify-between">
           <div>
@@ -817,6 +800,27 @@ export default function EdicionDetailPage() {
             className="w-[132px]"
           >
             Ver inscriptos →
+          </Button>
+        </div>
+      </Card>
+
+      <Card padding="md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Agrupación de muestras</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              {["config", "inscripcion"].includes(edicion.estado)
+                ? "Disponible al cerrar la inscripción."
+                : "Agrupá los estilos en grupos de premiación antes de la jornada de cata."}
+            </p>
+          </div>
+          <Button
+            variant="default"
+            disabled={["config", "inscripcion"].includes(edicion.estado)}
+            onClick={() => navigate(`/admin/ediciones/${edicion.id}/grupos`)}
+            className="w-[132px]"
+          >
+            Gestionar grupos →
           </Button>
         </div>
       </Card>
