@@ -1,8 +1,8 @@
--- name: GetEdicionesActivasCerveceria :many
+-- name: GetEdicionesInscriptaCerveceria :many
 SELECT e.id, e.nombre, e.estado
 FROM ediciones e
 INNER JOIN cervecerias c ON c.edicion_id = e.id AND c.usuario_id = $2
-WHERE e.org_id = $1 AND e.estado = 'inscripcion'
+WHERE e.org_id = $1
 ORDER BY e.created_at DESC;
 
 -- name: GetEdicionesDisponiblesCerveceria :many

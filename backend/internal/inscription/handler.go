@@ -198,7 +198,7 @@ func (h *Handler) GetEdicionesActivas(c echo.Context) error {
 	if !ok {
 		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
 	}
-	ediciones, err := h.svc.GetEdicionesActivasCerveceria(c.Request().Context(), usuarioID, orgID)
+	ediciones, err := h.svc.GetEdicionesCerveceria(c.Request().Context(), usuarioID, orgID)
 	if err != nil {
 		slog.Error("get ediciones activas cerveceria failed", "error", err, "org_id", orgID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener las ediciones")

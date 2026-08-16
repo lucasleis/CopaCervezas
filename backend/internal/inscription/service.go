@@ -72,13 +72,13 @@ func NewService(queries *db.Queries) *Service {
 	return &Service{queries: queries}
 }
 
-func (s *Service) GetEdicionesActivasCerveceria(ctx context.Context, usuarioID, orgID uuid.UUID) ([]db.GetEdicionesActivasCerveceriaRow, error) {
-	result, err := s.queries.GetEdicionesActivasCerveceria(ctx, db.GetEdicionesActivasCerveceriaParams{
+func (s *Service) GetEdicionesCerveceria(ctx context.Context, usuarioID, orgID uuid.UUID) ([]db.GetEdicionesInscriptaCerveceriaRow, error) {
+	result, err := s.queries.GetEdicionesInscriptaCerveceria(ctx, db.GetEdicionesInscriptaCerveceriaParams{
 		OrgID:     orgID,
 		UsuarioID: usuarioID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("inscription: get ediciones activas cerveceria: %w", err)
+		return nil, fmt.Errorf("inscription: get ediciones cerveceria: %w", err)
 	}
 	return result, nil
 }
