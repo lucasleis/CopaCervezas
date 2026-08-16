@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getEdicionesActivasCerveceria, type EdicionCerveceria } from "@/api/inscripcion";
+import { getEdicionesCerveceria, type EdicionCerveceria } from "@/api/inscripcion";
 
 interface UseEdicionActivaCerveceriaResult {
   ediciones: EdicionCerveceria[];
@@ -13,8 +13,8 @@ interface UseEdicionActivaCerveceriaResult {
 // la primera — mismo criterio que useEdicionActivaJuez.
 export function useEdicionActivaCerveceria(): UseEdicionActivaCerveceriaResult {
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["ediciones-activas-cerveceria"],
-    queryFn: getEdicionesActivasCerveceria,
+    queryKey: ["ediciones-cerveceria"],
+    queryFn: getEdicionesCerveceria,
   });
 
   // data === [] es un estado válido (sin edición activa), no un error.

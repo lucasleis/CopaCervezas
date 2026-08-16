@@ -1,22 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { useEdicionActivaCerveceria } from "@/hooks/useEdicionActivaCerveceria";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/PageContainer";
 import { PageHeader } from "@/components/PageHeader";
-import { getEdicionesDisponiblesCerveceria } from "@/api/inscripcion";
+import {
+  getEdicionesCerveceria,
+  getEdicionesDisponiblesCerveceria,
+  type EdicionCerveceria,
+} from "@/api/inscripcion";
+
+function estadoEnCursoLabel(estado: string): string {
+  if (estado === "pre-cata") return "En preparación";
+  if (estado === "cata") return "Cata en curso";
+  return estado;
+}
 
 export default function MisMuestrasPage() {
   const navigate = useNavigate();
 
   const {
-    ediciones,
+    data: ediciones,
     isLoading: edicionesLoading,
     isError: edicionesError,
-  } = useEdicionActivaCerveceria();
+  } = useQuery({
+    queryKey: ["ediciones-cerveceria"],
+    queryFn: getEdicionesCerveceria,
+  });
 
   const {
     data: edicionesDisponibles,
@@ -37,11 +49,21 @@ export default function MisMuestrasPage() {
 
   const isLoading = edicionesLoading || disponiblesLoading;
   const isError = edicionesError || disponiblesError;
+
+  const edicionesActivas: EdicionCerveceria[] =
+    ediciones?.filter((e) => e.estado === "inscripcion") ?? [];
+  const edicionesEnCurso: EdicionCerveceria[] =
+    ediciones?.filter((e) => e.estado === "pre-cata" || e.estado === "cata") ?? [];
+  const edicionesFinalizadas: EdicionCerveceria[] =
+    ediciones?.filter((e) => e.estado === "devolucion" || e.estado === "cerrada") ?? [];
+
   const noHayNada =
     !isLoading &&
     !isError &&
-    ediciones.length === 0 &&
-    (edicionesDisponibles?.length ?? 0) === 0;
+    edicionesActivas.length === 0 &&
+    (edicionesDisponibles?.length ?? 0) === 0 &&
+    edicionesEnCurso.length === 0 &&
+    edicionesFinalizadas.length === 0;
 
   return (
     <PageContainer variant="public">
@@ -67,12 +89,12 @@ export default function MisMuestrasPage() {
             <h2 className="mb-3 text-lg font-semibold text-neutral-900">
               Mis competencias
             </h2>
-            {ediciones.length === 0 && (
+            {edicionesActivas.length === 0 && (
               <EmptyState message="No estás inscripto en ninguna competencia activa." />
             )}
-            {ediciones.length > 0 && (
+            {edicionesActivas.length > 0 && (
               <Card padding="none" className="divide-y divide-neutral-200">
-                {ediciones.map((edicion) => (
+                {edicionesActivas.map((edicion) => (
                   <div
                     key={edicion.id}
                     className="flex items-center justify-between gap-4 px-4 py-3"
@@ -102,6 +124,46 @@ export default function MisMuestrasPage() {
                     <Button size="sm" onClick={() => handleVerCompetencia(edicion.id)}>
                       Ver competencia
                     </Button>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          )}
+
+          {edicionesEnCurso.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-neutral-900">
+                En curso
+              </h2>
+              <Card padding="none" className="divide-y divide-neutral-200">
+                {edicionesEnCurso.map((edicion) => (
+                  <div
+                    key={edicion.id}
+                    className="flex items-center justify-between gap-4 px-4 py-3"
+                  >
+                    <p className="font-medium text-neutral-900">{edicion.nombre}</p>
+                    <span className="text-sm text-neutral-500">
+                      {estadoEnCursoLabel(edicion.estado)}
+                    </span>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          )}
+
+          {edicionesFinalizadas.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-neutral-900">
+                Finalizadas
+              </h2>
+              <Card padding="none" className="divide-y divide-neutral-200">
+                {edicionesFinalizadas.map((edicion) => (
+                  <div
+                    key={edicion.id}
+                    className="flex items-center justify-between gap-4 px-4 py-3"
+                  >
+                    <p className="font-medium text-neutral-900">{edicion.nombre}</p>
+                    <span className="text-sm text-neutral-500">Finalizada</span>
                   </div>
                 ))}
               </Card>

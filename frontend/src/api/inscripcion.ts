@@ -112,7 +112,7 @@ interface ApiResponse<T> {
   error: { code: string; message: string } | null;
 }
 
-export async function getEdicionesActivasCerveceria(): Promise<EdicionCerveceria[]> {
+export async function getEdicionesCerveceria(): Promise<EdicionCerveceria[]> {
   const response = await apiClient.get<ApiResponse<EdicionCerveceria[]>>(
     "/api/v1/cerveceria/ediciones"
   );
