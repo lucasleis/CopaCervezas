@@ -14,11 +14,11 @@ import { cambiarEstado, type Edicion, type EstadoEdicion as EstadoEdicionType } 
 
 const ESTADO_CONFIG: Record<EstadoEdicionType, { label: string; className: string }> = {
   config: { label: "Configuración", className: "bg-neutral-100 text-neutral-600" },
-  inscripcion: { label: "Inscripción", className: "bg-blue-100 text-blue-700" },
-  "pre-cata": { label: "Pre-cata", className: "bg-yellow-100 text-yellow-700" },
-  cata: { label: "Cata", className: "bg-orange-100 text-orange-700" },
-  devolucion: { label: "Devolución", className: "bg-purple-100 text-purple-700" },
-  cerrada: { label: "Cerrada", className: "bg-green-100 text-green-700" },
+  inscripcion: { label: "Inscripción", className: "bg-info-100 text-info-700" },
+  "pre-cata": { label: "Pre-cata", className: "bg-warning-100 text-warning-700" },
+  cata: { label: "Cata", className: "bg-primary-100 text-primary-700" },
+  devolucion: { label: "Devolución", className: "bg-success-100 text-success-700" },
+  cerrada: { label: "Cerrada", className: "bg-neutral-100 text-neutral-500" },
 };
 
 const TRANSICIONES: Partial<Record<EstadoEdicionType, { destino: EstadoEdicionType; label: string }>> = {
