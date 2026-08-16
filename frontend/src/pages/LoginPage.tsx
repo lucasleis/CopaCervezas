@@ -77,7 +77,7 @@ export default function LoginPage() {
           <Link to="/register" className="block text-center text-sm text-neutral-500 hover:text-neutral-700">
             ¿Primera vez? Registrá tu cervecería
           </Link>
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-danger-500">{error}</p>}
         </form>
       </div>
     </div>
