@@ -59,7 +59,7 @@ function isoToDateInput(iso: string | null): string {
 // [nombre/código 30%] [col2 20%] [col3 20%] [col4 15%] [acciones 15%]
 // Esto garantiza que "Acciones" siempre quede en la misma posición horizontal.
 
-const ROW_GRID = "grid grid-cols-[30%_20%_20%_15%_15%] items-center";
+const ROW_GRID = "grid grid-cols-[280px_160px_160px_140px_160px] items-center";
 const HEADER_CELL = "px-4 py-3 text-xs font-bold uppercase tracking-wide text-neutral-700 border-b border-neutral-200";
 const DATA_CELL = "px-4 py-3 text-sm";
 
@@ -222,45 +222,47 @@ function PreciosSection({ edicionId }: { edicionId: string }) {
       </div>
 
       <div className="overflow-x-auto">
-        {/* Header */}
-        <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
-          <span className={HEADER_CELL}>Nombre</span>
-          <span className={HEADER_CELL}>Precio</span>
-          <span className={HEADER_CELL}>Válido desde</span>
-          <span className={HEADER_CELL}>Válido hasta</span>
-          <span className={HEADER_CELL}>Acciones</span>
-        </div>
+        <div className="min-w-max">
+          {/* Header */}
+          <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+            <span className={HEADER_CELL}>Nombre</span>
+            <span className={HEADER_CELL}>Precio</span>
+            <span className={HEADER_CELL}>Válido desde</span>
+            <span className={HEADER_CELL}>Válido hasta</span>
+            <span className={HEADER_CELL}>Acciones</span>
+          </div>
 
-        {/* Rows */}
-        <div className="divide-y divide-neutral-100">
-          {isLoading && [1, 2].map((i) => (
-            <div key={i} className={ROW_GRID}>
-              {[1, 2, 3, 4, 5].map((j) => (
-                <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
-              ))}
-            </div>
-          ))}
-          {!isLoading && precios?.length === 0 && (
-            <EmptyState bare message="No hay precios configurados." />
-          )}
-          {!isLoading && precios?.map((p) => (
-            <div key={p.id} className={ROW_GRID}>
-              <span className={`${DATA_CELL} font-medium text-neutral-900`}>{p.nombre}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>${p.precio}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_desde)}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_hasta)}</span>
-              <div className={`${DATA_CELL} flex gap-2`}>
-                <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
-                <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
+          {/* Rows */}
+          <div className="divide-y divide-neutral-100">
+            {isLoading && [1, 2].map((i) => (
+              <div key={i} className={ROW_GRID}>
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+            {!isLoading && precios?.length === 0 && (
+              <EmptyState bare message="No hay precios configurados." />
+            )}
+            {!isLoading && precios?.map((p) => (
+              <div key={p.id} className={ROW_GRID}>
+                <span className={`${DATA_CELL} font-medium text-neutral-900`}>{p.nombre}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>${p.precio}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_desde)}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{formatFecha(p.fecha_hasta)}</span>
+                <div className={`${DATA_CELL} flex gap-2`}>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(p)}>Editar</Button>
+                  <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(p)}>Eliminar</Button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        <div className={`${ROW_GRID} border-t border-neutral-100`}>
-          <span className="col-span-4" />
-          <div className="px-4 py-3">
-            <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar precio</Button>
+          <div className={`${ROW_GRID} border-t border-neutral-100`}>
+            <span className="col-span-4" />
+            <div className="px-4 py-3">
+              <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar precio</Button>
+            </div>
           </div>
         </div>
       </div>
@@ -418,45 +420,47 @@ function LugaresSection({ edicionId }: { edicionId: string }) {
       </div>
 
       <div className="overflow-x-auto">
-        {/* Header */}
-        <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
-          <span className={HEADER_CELL}>Nombre</span>
-          <span className={HEADER_CELL}>Dirección</span>
-          <span className={HEADER_CELL}>Ciudad</span>
-          <span className={HEADER_CELL}>Provincia</span>
-          <span className={HEADER_CELL}>Acciones</span>
-        </div>
+        <div className="min-w-max">
+          {/* Header */}
+          <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+            <span className={HEADER_CELL}>Nombre</span>
+            <span className={HEADER_CELL}>Dirección</span>
+            <span className={HEADER_CELL}>Ciudad</span>
+            <span className={HEADER_CELL}>Provincia</span>
+            <span className={HEADER_CELL}>Acciones</span>
+          </div>
 
-        {/* Rows */}
-        <div className="divide-y divide-neutral-100">
-          {isLoading && [1, 2].map((i) => (
-            <div key={i} className={ROW_GRID}>
-              {[1, 2, 3, 4, 5].map((j) => (
-                <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
-              ))}
-            </div>
-          ))}
-          {!isLoading && lugares?.length === 0 && (
-            <EmptyState bare message="No hay lugares configurados." />
-          )}
-          {!isLoading && lugares?.map((l) => (
-            <div key={l.id} className={ROW_GRID}>
-              <span className={`${DATA_CELL} font-medium text-neutral-900`}>{l.nombre}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{l.direccion}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{l.ciudad}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{l.provincia}</span>
-              <div className={`${DATA_CELL} flex gap-2`}>
-                <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
-                <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
+          {/* Rows */}
+          <div className="divide-y divide-neutral-100">
+            {isLoading && [1, 2].map((i) => (
+              <div key={i} className={ROW_GRID}>
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+            {!isLoading && lugares?.length === 0 && (
+              <EmptyState bare message="No hay lugares configurados." />
+            )}
+            {!isLoading && lugares?.map((l) => (
+              <div key={l.id} className={ROW_GRID}>
+                <span className={`${DATA_CELL} font-medium text-neutral-900`}>{l.nombre}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{l.direccion}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{l.ciudad}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{l.provincia}</span>
+                <div className={`${DATA_CELL} flex gap-2`}>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(l)}>Editar</Button>
+                  <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(l)}>Eliminar</Button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        <div className={`${ROW_GRID} border-t border-neutral-100`}>
-          <span className="col-span-4" />
-          <div className="px-4 py-3">
-            <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar lugar</Button>
+          <div className={`${ROW_GRID} border-t border-neutral-100`}>
+            <span className="col-span-4" />
+            <div className="px-4 py-3">
+              <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar lugar</Button>
+            </div>
           </div>
         </div>
       </div>
@@ -620,51 +624,53 @@ function DescuentosSection({ edicionId }: { edicionId: string }) {
       </div>
 
       <div className="overflow-x-auto">
-        {/* Header */}
-        <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
-          <span className={HEADER_CELL}>Código</span>
-          <span className={HEADER_CELL}>Descuento</span>
-          <span className={HEADER_CELL}>Usos</span>
-          <span className={HEADER_CELL}>Estado</span>
-          <span className={HEADER_CELL}>Acciones</span>
-        </div>
+        <div className="min-w-max">
+          {/* Header */}
+          <div className={`${ROW_GRID} border-b border-neutral-100 bg-neutral-50`}>
+            <span className={HEADER_CELL}>Código</span>
+            <span className={HEADER_CELL}>Descuento</span>
+            <span className={HEADER_CELL}>Usos</span>
+            <span className={HEADER_CELL}>Estado</span>
+            <span className={HEADER_CELL}>Acciones</span>
+          </div>
 
-        {/* Rows */}
-        <div className="divide-y divide-neutral-100">
-          {isLoading && [1, 2].map((i) => (
-            <div key={i} className={ROW_GRID}>
-              {[1, 2, 3, 4, 5].map((j) => (
-                <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
-              ))}
-            </div>
-          ))}
-          {!isLoading && descuentos?.length === 0 && (
-            <EmptyState bare message="No hay códigos de descuento." />
-          )}
-          {!isLoading && descuentos?.map((d) => (
-            <div key={d.id} className={ROW_GRID}>
-              <span className={`${DATA_CELL} font-mono font-medium text-neutral-900`}>{d.codigo}</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>{d.descuento_porcentaje}%</span>
-              <span className={`${DATA_CELL} text-neutral-600`}>
-                {d.usos_actuales}{d.max_usos !== null ? ` / ${d.max_usos}` : ""}
-              </span>
-              <div className={DATA_CELL}>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${d.activo ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
-                  {d.activo ? "Activo" : "Inactivo"}
+          {/* Rows */}
+          <div className="divide-y divide-neutral-100">
+            {isLoading && [1, 2].map((i) => (
+              <div key={i} className={ROW_GRID}>
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className={DATA_CELL}><Skeleton className="h-4 w-24" /></div>
+                ))}
+              </div>
+            ))}
+            {!isLoading && descuentos?.length === 0 && (
+              <EmptyState bare message="No hay códigos de descuento." />
+            )}
+            {!isLoading && descuentos?.map((d) => (
+              <div key={d.id} className={ROW_GRID}>
+                <span className={`${DATA_CELL} font-mono font-medium text-neutral-900`}>{d.codigo}</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>{d.descuento_porcentaje}%</span>
+                <span className={`${DATA_CELL} text-neutral-600`}>
+                  {d.usos_actuales}{d.max_usos !== null ? ` / ${d.max_usos}` : ""}
                 </span>
+                <div className={DATA_CELL}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${d.activo ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-500"}`}>
+                    {d.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+                <div className={`${DATA_CELL} flex gap-2`}>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
+                  <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
+                </div>
               </div>
-              <div className={`${DATA_CELL} flex gap-2`}>
-                <Button variant="outline" size="sm" onClick={() => openEdit(d)}>Editar</Button>
-                <Button variant="destructive-outline" size="sm" onClick={() => handleDelete(d)}>Eliminar</Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <div className={`${ROW_GRID} border-t border-neutral-100`}>
-          <span className="col-span-4" />
-          <div className="px-4 py-3">
-            <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar código</Button>
+          <div className={`${ROW_GRID} border-t border-neutral-100`}>
+            <span className="col-span-4" />
+            <div className="px-4 py-3">
+              <Button size="sm" onClick={openCreate} className="w-[132px]">+ Agregar código</Button>
+            </div>
           </div>
         </div>
       </div>
