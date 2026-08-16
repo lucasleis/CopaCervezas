@@ -42,23 +42,23 @@ const ESTADO_CONFIG: Record<
   },
   inscripcion: {
     label: "Inscripción",
-    className: "bg-blue-100 text-blue-700",
+    className: "bg-info-100 text-info-700",
   },
   "pre-cata": {
     label: "Pre-cata",
-    className: "bg-yellow-100 text-yellow-700",
+    className: "bg-warning-100 text-warning-700",
   },
   cata: {
     label: "Cata",
-    className: "bg-orange-100 text-orange-700",
+    className: "bg-primary-100 text-primary-700",
   },
   devolucion: {
     label: "Devolución",
-    className: "bg-purple-100 text-purple-700",
+    className: "bg-success-100 text-success-700",
   },
   cerrada: {
     label: "Cerrada",
-    className: "bg-success-100 text-success-700",
+    className: "bg-neutral-100 text-neutral-500",
   },
 };
 

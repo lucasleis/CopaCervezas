@@ -62,6 +62,7 @@
   --color-input: var(--color-neutral-200);
   --color-ring: var(--color-primary-400);
   --color-destructive: var(--color-danger-500);
+  --color-destructive-foreground: #ffffff;
 }
 
 /* Mantener :root solo para los tokens que shadcn necesita como CSS vars nativas */
