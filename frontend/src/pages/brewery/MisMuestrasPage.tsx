@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageContainer } from "@/components/PageContainer";
 import { PageHeader } from "@/components/PageHeader";
+import { cn } from "@/lib/utils";
 import {
   getEdicionesCerveceria,
   getEdicionesDisponiblesCerveceria,
@@ -85,14 +86,11 @@ export default function MisMuestrasPage() {
 
       {!isLoading && !isError && !noHayNada && (
         <div className="space-y-8">
-          <div>
-            <h2 className="mb-3 text-lg font-semibold text-neutral-900">
-              Mis competencias
-            </h2>
-            {edicionesActivas.length === 0 && (
-              <EmptyState message="No estás inscripto en ninguna competencia activa." />
-            )}
-            {edicionesActivas.length > 0 && (
+          {edicionesActivas.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-neutral-900">
+                Mis competencias
+              </h2>
               <Card padding="none" className="divide-y divide-neutral-200">
                 {edicionesActivas.map((edicion) => (
                   <div
@@ -106,8 +104,8 @@ export default function MisMuestrasPage() {
                   </div>
                 ))}
               </Card>
-            )}
-          </div>
+            </div>
+          )}
 
           {(edicionesDisponibles?.length ?? 0) > 0 && (
             <div>
@@ -142,7 +140,12 @@ export default function MisMuestrasPage() {
                     className="flex items-center justify-between gap-4 px-4 py-3"
                   >
                     <p className="font-medium text-neutral-900">{edicion.nombre}</p>
-                    <span className="text-sm text-neutral-500">
+                    <span className={cn(
+                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                      edicion.estado === "cata"
+                        ? "bg-primary-100 text-primary-700"
+                        : "bg-warning-100 text-warning-700"
+                    )}>
                       {estadoEnCursoLabel(edicion.estado)}
                     </span>
                   </div>
@@ -163,7 +166,9 @@ export default function MisMuestrasPage() {
                     className="flex items-center justify-between gap-4 px-4 py-3"
                   >
                     <p className="font-medium text-neutral-900">{edicion.nombre}</p>
-                    <span className="text-sm text-neutral-500">Finalizada</span>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-neutral-100 text-neutral-500">
+                      Finalizada
+                    </span>
                   </div>
                 ))}
               </Card>
