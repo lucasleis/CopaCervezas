@@ -341,6 +341,7 @@ export default function EvaluacionForm({
       fuerzaRelativa: fuerzaRelativa === null,
       devolucionObs: countWords(devolucionObs) < 20,
       avanza: avanza === null,
+      comentarioFinal: avanza !== null && devolucionObs.trim() === "",
     }),
     [
       aparienciaObs,
@@ -400,7 +401,7 @@ export default function EvaluacionForm({
         muestra_id: muestra.id,
         puntajes,
         comentarios: null,
-        comentario_final: null,
+        comentario_final: devolucionObs.trim() || null,
         avanza,
       });
     },
@@ -423,6 +424,10 @@ export default function EvaluacionForm({
         }
         if (error.response?.status === 403 && code === "SIN_ASIGNACION") {
           toast.error("No tenés asignación para este vuelo");
+          return;
+        }
+        if (error.response?.status === 422 && code === "COMENTARIO_FINAL_REQUERIDO") {
+          toast.error("El comentario final es obligatorio para poder enviar la evaluación.");
           return;
         }
       }
@@ -678,7 +683,7 @@ export default function EvaluacionForm({
               value={devolucionObs}
               onChange={setDevolucionObs}
               minWords={20}
-              error={mostrarError("devolucionObs")}
+              error={mostrarError("devolucionObs") || mostrarError("comentarioFinal")}
             />
             <div className="space-y-1">
               <span className="text-sm font-medium text-neutral-700">
