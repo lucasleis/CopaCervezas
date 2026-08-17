@@ -74,6 +74,19 @@ JOIN estilos es ON es.id = m.estilo_id
 WHERE ev.juez_id = $1 AND m.edicion_id = $2
 ORDER BY m.cod_anonimo ASC;
 
+-- name: GetEvaluacionDetalleJuez :one
+SELECT
+    id,
+    muestra_id,
+    vuelo_id,
+    avanza,
+    comentario_final,
+    puntajes,
+    created_at
+FROM evaluaciones
+WHERE id = $1 AND juez_id = $2
+LIMIT 1;
+
 -- name: GetProgresoVuelosEdicion :many
 SELECT
     v.id,

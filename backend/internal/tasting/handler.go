@@ -99,6 +99,16 @@ type evaluacionJuezResponse struct {
 	EstiloNombre string    `json:"estilo_nombre"`
 }
 
+type evaluacionDetalleResponse struct {
+	ID              string          `json:"id"`
+	MuestraID       string          `json:"muestra_id"`
+	VueloID         string          `json:"vuelo_id"`
+	Avanza          *bool           `json:"avanza"`
+	ComentarioFinal *string         `json:"comentario_final"`
+	Puntajes        json.RawMessage `json:"puntajes"`
+	CreatedAt       time.Time       `json:"created_at"`
+}
+
 func toVueloJuezResponse(v db.GetVuelosJuezRow) vueloJuezResponse {
 	return vueloJuezResponse{
 		ID:          v.ID.String(),
@@ -123,6 +133,25 @@ func toMuestraVueloResponse(m db.GetMuestrasVueloRow) muestraVueloResponse {
 	}
 	if m.InfoAdicional.Valid {
 		r.InfoAdicional = m.InfoAdicional.RawMessage
+	}
+	return r
+}
+
+func toEvaluacionDetalleResponse(ev db.GetEvaluacionDetalleJuezRow) evaluacionDetalleResponse {
+	r := evaluacionDetalleResponse{
+		ID:        ev.ID.String(),
+		MuestraID: ev.MuestraID.String(),
+		VueloID:   ev.VueloID.String(),
+		CreatedAt: ev.CreatedAt,
+	}
+	if ev.Avanza.Valid {
+		r.Avanza = &ev.Avanza.Bool
+	}
+	if ev.ComentarioFinal.Valid {
+		r.ComentarioFinal = &ev.ComentarioFinal.String
+	}
+	if ev.Puntajes.Valid {
+		r.Puntajes = ev.Puntajes.RawMessage
 	}
 	return r
 }
@@ -276,6 +305,31 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 	}
 	h.broadcastEvaluacionCompletada(edicionID, evaluacion, juezCompletoVuelo)
 	return respond(c, http.StatusCreated, evaluacionCreatedResponse{ID: evaluacion.ID.String()})
+}
+
+// GetEvaluacionDetalle devuelve el detalle completo de una evaluación propia
+// del juez autenticado (puntajes, comentario_final, avanza).
+func (h *Handler) GetEvaluacionDetalle(c echo.Context) error {
+	if !requireJuez(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol judge")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	evaluacionID, err := parseUUID(c, "evaluacion_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de evaluación inválido")
+	}
+	evaluacion, err := h.svc.GetEvaluacionDetalle(c.Request().Context(), evaluacionID, usuarioID)
+	if err != nil {
+		if errors.Is(err, ErrEvaluacionNotFound) {
+			return fail(c, http.StatusNotFound, "EVALUACION_NOT_FOUND", "La evaluación solicitada no existe")
+		}
+		slog.Error("get evaluacion detalle failed", "error", err, "evaluacion_id", evaluacionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener el detalle de la evaluación")
+	}
+	return respond(c, http.StatusOK, toEvaluacionDetalleResponse(evaluacion))
 }
 
 func (h *Handler) broadcastEvaluacionCompletada(edicionID uuid.UUID, evaluacion db.Evaluacione, juezCompletoVuelo bool) {

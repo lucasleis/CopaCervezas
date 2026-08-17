@@ -107,6 +107,23 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID uuid.UUID, req Cr
 	return result, juezCompletoVuelo, nil
 }
 
+// GetEvaluacionDetalle devuelve el detalle completo de una evaluación propia del juez.
+// Filtra por juez_id además del id de la evaluación, así un juez nunca puede
+// acceder al detalle de una evaluación de otro juez.
+func (s *Service) GetEvaluacionDetalle(ctx context.Context, evaluacionID, juezID uuid.UUID) (db.GetEvaluacionDetalleJuezRow, error) {
+	result, err := s.queries.GetEvaluacionDetalleJuez(ctx, db.GetEvaluacionDetalleJuezParams{
+		ID:     evaluacionID,
+		JuezID: juezID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return db.GetEvaluacionDetalleJuezRow{}, ErrEvaluacionNotFound
+		}
+		return db.GetEvaluacionDetalleJuezRow{}, fmt.Errorf("tasting: get evaluacion detalle: %w", err)
+	}
+	return result, nil
+}
+
 // actualizarProgresoAsignacion recalcula si el juez terminó todas las muestras
 // del vuelo y actualiza asignaciones_juez.estado en consecuencia.
 func (s *Service) actualizarProgresoAsignacion(
