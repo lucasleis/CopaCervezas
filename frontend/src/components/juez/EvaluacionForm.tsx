@@ -331,6 +331,11 @@ export default function EvaluacionForm({
       saborFermentacion: attrInvalido(saborAttrs.fermentacion),
       saborBalance: attrInvalido(saborAttrs.balance),
       saborObs: countWords(saborObs) < 10,
+      sensacionCuerpo: attrInvalido(sensacionAttrs.cuerpo),
+      sensacionCarbonatacion: attrInvalido(sensacionAttrs.carbonatacion),
+      sensacionCremosidad: attrInvalido(sensacionAttrs.cremosidad),
+      sensacionCalentamiento: attrInvalido(sensacionAttrs.calentamiento),
+      sensacionAstringencia: attrInvalido(sensacionAttrs.astringencia),
       calidadTecnica: !calidadTecnica,
       meritoEstilistico: !meritoEstilistico,
       fuerzaRelativa: fuerzaRelativa === null,
@@ -343,6 +348,7 @@ export default function EvaluacionForm({
       aromaObs,
       saborAttrs,
       saborObs,
+      sensacionAttrs,
       calidadTecnica,
       meritoEstilistico,
       fuerzaRelativa,
@@ -584,30 +590,35 @@ export default function EvaluacionForm({
               options={ESCALA_INTENSIDAD}
               value={sensacionAttrs.cuerpo}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, cuerpo: v }))}
+              error={mostrarError("sensacionCuerpo")}
             />
             <AttributeField
               label="Carbonatación"
               options={ESCALA_INTENSIDAD}
               value={sensacionAttrs.carbonatacion}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, carbonatacion: v }))}
+              error={mostrarError("sensacionCarbonatacion")}
             />
             <AttributeField
               label="Cremosidad"
               options={ESCALA_INTENSIDAD}
               value={sensacionAttrs.cremosidad}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, cremosidad: v }))}
+              error={mostrarError("sensacionCremosidad")}
             />
             <AttributeField
               label="Calentamiento"
               options={ESCALA_INTENSIDAD}
               value={sensacionAttrs.calentamiento}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, calentamiento: v }))}
+              error={mostrarError("sensacionCalentamiento")}
             />
             <AttributeField
               label="Astringencia"
               options={ESCALA_INTENSIDAD}
               value={sensacionAttrs.astringencia}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, astringencia: v }))}
+              error={mostrarError("sensacionAstringencia")}
             />
             <ObservacionesField
               label="Observaciones"
