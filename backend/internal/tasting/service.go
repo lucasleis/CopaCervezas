@@ -195,6 +195,20 @@ func (s *Service) GetEvaluacionesJuez(ctx context.Context, juezID, edicionID uui
 	return result, nil
 }
 
+// GetEvaluacionesJuezPorVuelo devuelve las evaluaciones propias del juez para
+// un vuelo puntual — no depende de la edición, así que está disponible desde
+// el primer render con solo el vuelo_id de la URL.
+func (s *Service) GetEvaluacionesJuezPorVuelo(ctx context.Context, juezID, vueloID uuid.UUID) ([]db.GetEvaluacionesJuezPorVueloRow, error) {
+	result, err := s.queries.GetEvaluacionesJuezPorVuelo(ctx, db.GetEvaluacionesJuezPorVueloParams{
+		JuezID:  juezID,
+		VueloID: vueloID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("tasting: get evaluaciones juez por vuelo: %w", err)
+	}
+	return result, nil
+}
+
 // Admin
 
 type UpdateEvaluacionAdminRequest struct {

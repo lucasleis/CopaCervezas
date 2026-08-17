@@ -179,6 +179,7 @@ func main() {
 	juez.GET("/ediciones/:edicion_id/vuelos/:vuelo_id/muestras", tastingHandler.GetMuestrasVuelo)
 	juez.POST("/ediciones/:edicion_id/evaluaciones", tastingHandler.CreateEvaluacion)
 	juez.GET("/ediciones/:edicion_id/evaluaciones", tastingHandler.GetEvaluacionesJuez)
+	juez.GET("/vuelos/:vuelo_id/evaluaciones", tastingHandler.GetEvaluacionesJuezPorVuelo)
 	protected.GET("/api/v1/cata/evaluaciones/:evaluacion_id/detalle", tastingHandler.GetEvaluacionDetalle)
 
 	// Catch-all: rutas no registradas bajo el grupo protected devuelven 404

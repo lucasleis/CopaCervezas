@@ -404,6 +404,44 @@ func (h *Handler) GetEvaluacionesJuez(c echo.Context) error {
 	return respond(c, http.StatusOK, result)
 }
 
+// GetEvaluacionesJuezPorVuelo devuelve las evaluaciones propias del juez para
+// un vuelo puntual, identificado directamente por vuelo_id.
+func (h *Handler) GetEvaluacionesJuezPorVuelo(c echo.Context) error {
+	if !requireJuez(c) {
+		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol judge")
+	}
+	usuarioID, ok := usuarioIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
+	vueloID, err := parseUUID(c, "vuelo_id")
+	if err != nil {
+		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de vuelo inválido")
+	}
+	rows, err := h.svc.GetEvaluacionesJuezPorVuelo(c.Request().Context(), usuarioID, vueloID)
+	if err != nil {
+		slog.Error("get evaluaciones juez por vuelo failed", "error", err, "vuelo_id", vueloID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al obtener las evaluaciones")
+	}
+	result := make([]evaluacionJuezResponse, len(rows))
+	for i, e := range rows {
+		result[i] = evaluacionJuezResponse{
+			ID:           e.ID.String(),
+			MuestraID:    e.MuestraID.String(),
+			VueloID:      e.VueloID.String(),
+			CreatedAt:    e.CreatedAt,
+			EstiloNombre: e.EstiloNombre,
+		}
+		if e.Avanza.Valid {
+			result[i].Avanza = &e.Avanza.Bool
+		}
+		if e.CodAnonimo.Valid {
+			result[i].CodAnonimo = &e.CodAnonimo.String
+		}
+	}
+	return respond(c, http.StatusOK, result)
+}
+
 // Admin
 
 type updateEvaluacionAdminResponse struct {

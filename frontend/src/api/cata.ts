@@ -40,6 +40,53 @@ export interface CreateEvaluacionInput {
   avanza: boolean | null;
 }
 
+export interface AttrValorPuntaje {
+  valor: string;
+  inapropiado: boolean;
+}
+
+export interface PuntajesEvaluacion {
+  apariencia: { observaciones: string };
+  aroma: {
+    malta: AttrValorPuntaje;
+    lupulo: AttrValorPuntaje;
+    fermentacion: AttrValorPuntaje;
+    otros_ingredientes: AttrValorPuntaje;
+    observaciones: string;
+  };
+  sabor: {
+    malta: AttrValorPuntaje;
+    lupulo: AttrValorPuntaje;
+    amargor: AttrValorPuntaje;
+    fermentacion: AttrValorPuntaje;
+    balance: AttrValorPuntaje;
+    observaciones: string;
+  };
+  sensacion_en_boca: {
+    cuerpo: AttrValorPuntaje;
+    carbonatacion: AttrValorPuntaje;
+    cremosidad: AttrValorPuntaje;
+    calentamiento: AttrValorPuntaje;
+    astringencia: AttrValorPuntaje;
+    observaciones: string;
+  };
+  general: {
+    calidad_tecnica: string;
+    merito_estilistico: string;
+    fuerza_relativa: number | null;
+  };
+  devolucion: { observaciones: string };
+}
+
+export interface EvaluacionDetalle {
+  id: string;
+  muestra_id: string;
+  vuelo_id: string;
+  avanza: boolean | null;
+  comentario_final: string | null;
+  puntajes: PuntajesEvaluacion | null;
+}
+
 export type EstadoEdicionJuez = "pre-cata" | "cata";
 
 export interface EdicionJuez {
@@ -106,6 +153,13 @@ export async function createEvaluacion(
   return response.data.data;
 }
 
+export async function getEvaluacionDetalle(evaluacionId: string): Promise<EvaluacionDetalle> {
+  const response = await apiClient.get<ApiResponse<EvaluacionDetalle>>(
+    `/api/v1/cata/evaluaciones/${evaluacionId}/detalle`
+  );
+  return response.data.data;
+}
+
 export async function getEvaluacionesJuez(
   edicionId: string,
   orderBy?: "grupo" | "codigo"
@@ -113,6 +167,13 @@ export async function getEvaluacionesJuez(
   const response = await apiClient.get<ApiResponse<Evaluacion[]>>(
     `/api/v1/juez/ediciones/${edicionId}/evaluaciones`,
     { params: orderBy ? { order_by: orderBy } : undefined }
+  );
+  return response.data.data;
+}
+
+export async function getEvaluacionesPorVuelo(vueloId: string): Promise<Evaluacion[]> {
+  const response = await apiClient.get<ApiResponse<Evaluacion[]>>(
+    `/api/v1/juez/vuelos/${vueloId}/evaluaciones`
   );
   return response.data.data;
 }

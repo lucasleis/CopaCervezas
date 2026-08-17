@@ -1,13 +1,14 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { createEvaluacion, type MuestraVuelo } from "@/api/cata";
+import { createEvaluacion, getEvaluacionDetalle, type MuestraVuelo } from "@/api/cata";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
   muestra: MuestraVuelo;
   juezEmail?: string;
   onSuccess: () => void;
+  readOnly?: boolean;
+  evaluacionId?: string;
 }
 
 // --- Escalas ---
@@ -100,6 +103,7 @@ function AttributeField({
   onChange,
   error,
   itemClassName,
+  disabled,
 }: {
   label: string;
   options: readonly string[];
@@ -107,6 +111,7 @@ function AttributeField({
   onChange: (next: AttrValue) => void;
   error?: boolean;
   itemClassName?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="space-y-1">
@@ -123,6 +128,7 @@ function AttributeField({
           <Checkbox
             id={`${label}-inapropiado`}
             checked={value.inapropiado}
+            disabled={disabled}
             onCheckedChange={(checked) => onChange({ valor: value.valor, inapropiado: checked })}
           />
           Inapropiado
@@ -131,10 +137,11 @@ function AttributeField({
       <ToggleGroup
         value={value.valor ? [value.valor] : []}
         onValueChange={(next) => onChange({ valor: next[0] ?? "", inapropiado: false })}
-        disabled={value.inapropiado}
+        disabled={disabled || value.inapropiado}
         className={cn(
           "w-full flex-nowrap overflow-x-auto",
-          value.inapropiado && "opacity-40"
+          value.inapropiado && "opacity-40",
+          disabled && "pointer-events-none"
         )}
       >
         {options.map((opt) => (
@@ -163,6 +170,7 @@ function ObservacionesField({
   minWords,
   error,
   optional,
+  disabled,
 }: {
   label: string;
   value: string;
@@ -170,6 +178,7 @@ function ObservacionesField({
   minWords: number;
   error?: boolean;
   optional?: boolean;
+  disabled?: boolean;
 }) {
   const words = countWords(value);
   return (
@@ -182,6 +191,7 @@ function ObservacionesField({
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         aria-invalid={error}
+        disabled={disabled}
         className="text-xs"
       />
       {!optional && (
@@ -200,6 +210,7 @@ function RadioRow({
   error,
   itemClassName,
   groupClassName,
+  disabled,
 }: {
   options: readonly string[];
   value: string;
@@ -207,16 +218,19 @@ function RadioRow({
   error?: boolean;
   itemClassName?: string;
   groupClassName?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="space-y-1">
       <ToggleGroup
         value={value ? [value] : []}
         onValueChange={(next) => onChange(next[0] ?? "")}
+        disabled={disabled}
         className={cn(
           "w-full flex-nowrap overflow-x-auto",
           groupClassName,
-          error && "rounded-md ring-1 ring-red-300"
+          error && "rounded-md ring-1 ring-red-300",
+          disabled && "pointer-events-none"
         )}
       >
         {options.map((opt) => (
@@ -244,6 +258,8 @@ export default function EvaluacionForm({
   muestra,
   juezEmail,
   onSuccess,
+  readOnly,
+  evaluacionId,
 }: Props) {
   const queryClient = useQueryClient();
 
@@ -283,6 +299,53 @@ export default function EvaluacionForm({
   const [avanza, setAvanza] = useState<boolean | null>(null);
 
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+  const {
+    data: detalle,
+    isLoading: detalleLoading,
+    isError: detalleError,
+  } = useQuery({
+    queryKey: ["evaluacion-detalle", evaluacionId],
+    queryFn: () => getEvaluacionDetalle(evaluacionId as string),
+    enabled: !!readOnly && !!evaluacionId,
+  });
+
+  useEffect(() => {
+    if (!readOnly || !detalle) return;
+    const p = detalle.puntajes;
+    if (p) {
+      setAparienciaObs(p.apariencia?.observaciones ?? "");
+      setAromaAttrs({
+        malta: p.aroma?.malta ?? attrVacio(),
+        lupulo: p.aroma?.lupulo ?? attrVacio(),
+        fermentacion: p.aroma?.fermentacion ?? attrVacio(),
+        otrosIngredientes: p.aroma?.otros_ingredientes ?? attrVacio(),
+      });
+      setAromaObs(p.aroma?.observaciones ?? "");
+      setSaborAttrs({
+        malta: p.sabor?.malta ?? attrVacio(),
+        lupulo: p.sabor?.lupulo ?? attrVacio(),
+        amargor: p.sabor?.amargor ?? attrVacio(),
+        fermentacion: p.sabor?.fermentacion ?? attrVacio(),
+        balance: p.sabor?.balance ?? attrVacio(),
+      });
+      setSaborObs(p.sabor?.observaciones ?? "");
+      setSensacionAttrs({
+        cuerpo: p.sensacion_en_boca?.cuerpo ?? attrVacio(),
+        carbonatacion: p.sensacion_en_boca?.carbonatacion ?? attrVacio(),
+        cremosidad: p.sensacion_en_boca?.cremosidad ?? attrVacio(),
+        calentamiento: p.sensacion_en_boca?.calentamiento ?? attrVacio(),
+        astringencia: p.sensacion_en_boca?.astringencia ?? attrVacio(),
+      });
+      setSensacionObs(p.sensacion_en_boca?.observaciones ?? "");
+      setCalidadTecnica(p.general?.calidad_tecnica ?? "");
+      setMeritoEstilistico(p.general?.merito_estilistico ?? "");
+      setFuerzaRelativa(p.general?.fuerza_relativa ?? null);
+      setDevolucionObs(p.devolucion?.observaciones ?? "");
+    }
+    setAvanza(detalle.avanza);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readOnly, detalle]);
 
   function resetForm() {
     setAparienciaObs("");
@@ -406,7 +469,7 @@ export default function EvaluacionForm({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["evaluaciones-juez", edicionId] });
+      queryClient.invalidateQueries({ queryKey: ["evaluaciones-vuelo", vueloId] });
       toast.success("Evaluación enviada correctamente");
       resetForm();
       onSuccess();
@@ -447,6 +510,28 @@ export default function EvaluacionForm({
   const infoAdicionalEntries = muestra.info_adicional
     ? Object.entries(muestra.info_adicional)
     : [];
+
+  if (readOnly && detalleLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-96 w-full rounded-md" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (readOnly && detalleError) {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-destructive">
+          No se pudo cargar el detalle de esta evaluación.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -496,6 +581,7 @@ export default function EvaluacionForm({
               onChange={setAparienciaObs}
               minWords={5}
               error={mostrarError("apariencia")}
+              disabled={readOnly}
             />
           </Section>
 
@@ -506,6 +592,7 @@ export default function EvaluacionForm({
               value={aromaAttrs.malta}
               onChange={(v) => setAromaAttrs((prev) => ({ ...prev, malta: v }))}
               error={mostrarError("aromaMalta")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Lúpulo"
@@ -513,6 +600,7 @@ export default function EvaluacionForm({
               value={aromaAttrs.lupulo}
               onChange={(v) => setAromaAttrs((prev) => ({ ...prev, lupulo: v }))}
               error={mostrarError("aromaLupulo")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Fermentación"
@@ -520,6 +608,7 @@ export default function EvaluacionForm({
               value={aromaAttrs.fermentacion}
               onChange={(v) => setAromaAttrs((prev) => ({ ...prev, fermentacion: v }))}
               error={mostrarError("aromaFermentacion")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Otros ingredientes (fruta, hierbas, etc)"
@@ -527,6 +616,7 @@ export default function EvaluacionForm({
               value={aromaAttrs.otrosIngredientes}
               onChange={(v) => setAromaAttrs((prev) => ({ ...prev, otrosIngredientes: v }))}
               error={mostrarError("aromaOtros")}
+              disabled={readOnly}
             />
             <ObservacionesField
               label="Observaciones"
@@ -534,6 +624,7 @@ export default function EvaluacionForm({
               onChange={setAromaObs}
               minWords={10}
               error={mostrarError("aromaObs")}
+              disabled={readOnly}
             />
           </Section>
         </div>
@@ -547,6 +638,7 @@ export default function EvaluacionForm({
               value={saborAttrs.malta}
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, malta: v }))}
               error={mostrarError("saborMalta")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Lúpulo"
@@ -554,6 +646,7 @@ export default function EvaluacionForm({
               value={saborAttrs.lupulo}
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, lupulo: v }))}
               error={mostrarError("saborLupulo")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Amargor"
@@ -561,6 +654,7 @@ export default function EvaluacionForm({
               value={saborAttrs.amargor}
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, amargor: v }))}
               error={mostrarError("saborAmargor")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Fermentación"
@@ -568,6 +662,7 @@ export default function EvaluacionForm({
               value={saborAttrs.fermentacion}
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, fermentacion: v }))}
               error={mostrarError("saborFermentacion")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Balance"
@@ -576,6 +671,7 @@ export default function EvaluacionForm({
               onChange={(v) => setSaborAttrs((prev) => ({ ...prev, balance: v }))}
               error={mostrarError("saborBalance")}
               itemClassName="h-14 px-1 text-sm"
+              disabled={readOnly}
             />
             <ObservacionesField
               label="Observaciones"
@@ -583,6 +679,7 @@ export default function EvaluacionForm({
               onChange={setSaborObs}
               minWords={10}
               error={mostrarError("saborObs")}
+              disabled={readOnly}
             />
           </Section>
         </div>
@@ -596,6 +693,7 @@ export default function EvaluacionForm({
               value={sensacionAttrs.cuerpo}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, cuerpo: v }))}
               error={mostrarError("sensacionCuerpo")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Carbonatación"
@@ -603,6 +701,7 @@ export default function EvaluacionForm({
               value={sensacionAttrs.carbonatacion}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, carbonatacion: v }))}
               error={mostrarError("sensacionCarbonatacion")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Cremosidad"
@@ -610,6 +709,7 @@ export default function EvaluacionForm({
               value={sensacionAttrs.cremosidad}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, cremosidad: v }))}
               error={mostrarError("sensacionCremosidad")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Calentamiento"
@@ -617,6 +717,7 @@ export default function EvaluacionForm({
               value={sensacionAttrs.calentamiento}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, calentamiento: v }))}
               error={mostrarError("sensacionCalentamiento")}
+              disabled={readOnly}
             />
             <AttributeField
               label="Astringencia"
@@ -624,6 +725,7 @@ export default function EvaluacionForm({
               value={sensacionAttrs.astringencia}
               onChange={(v) => setSensacionAttrs((prev) => ({ ...prev, astringencia: v }))}
               error={mostrarError("sensacionAstringencia")}
+              disabled={readOnly}
             />
             <ObservacionesField
               label="Observaciones"
@@ -631,6 +733,7 @@ export default function EvaluacionForm({
               onChange={setSensacionObs}
               minWords={0}
               optional
+              disabled={readOnly}
             />
           </Section>
         </div>
@@ -648,6 +751,7 @@ export default function EvaluacionForm({
                 onChange={setCalidadTecnica}
                 error={mostrarError("calidadTecnica")}
                 itemClassName="h-14 text-sm"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">
@@ -660,6 +764,7 @@ export default function EvaluacionForm({
                 onChange={setMeritoEstilistico}
                 error={mostrarError("meritoEstilistico")}
                 itemClassName="h-14 px-1 text-sm"
+                disabled={readOnly}
               />
             </div>
             <div className="space-y-1">
@@ -673,6 +778,7 @@ export default function EvaluacionForm({
                 error={mostrarError("fuerzaRelativa")}
                 groupClassName="gap-2"
                 itemClassName="py-3 text-base font-semibold"
+                disabled={readOnly}
               />
             </div>
           </Section>
@@ -684,6 +790,7 @@ export default function EvaluacionForm({
               onChange={setDevolucionObs}
               minWords={20}
               error={mostrarError("devolucionObs") || mostrarError("comentarioFinal")}
+              disabled={readOnly}
             />
             <div className="space-y-1">
               <span className="text-sm font-medium text-neutral-700">
@@ -692,9 +799,11 @@ export default function EvaluacionForm({
               <ToggleGroup
                 value={avanza === null ? [] : [avanza ? "si" : "no"]}
                 onValueChange={(next) => setAvanza(next[0] === "si")}
+                disabled={readOnly}
                 className={cn(
                   "w-full flex-nowrap",
-                  mostrarError("avanza") && "rounded-md ring-1 ring-red-300"
+                  mostrarError("avanza") && "rounded-md ring-1 ring-red-300",
+                  readOnly && "pointer-events-none"
                 )}
               >
                 <ToggleGroupItem
@@ -718,11 +827,13 @@ export default function EvaluacionForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" onClick={handleSubmit} disabled={mutation.isPending}>
-          {mutation.isPending ? "Enviando..." : "Enviar evaluación"}
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" onClick={handleSubmit} disabled={mutation.isPending}>
+            {mutation.isPending ? "Enviando..." : "Enviar evaluación"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

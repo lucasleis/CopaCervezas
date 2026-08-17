@@ -87,6 +87,21 @@ FROM evaluaciones
 WHERE id = $1 AND juez_id = $2
 LIMIT 1;
 
+-- name: GetEvaluacionesJuezPorVuelo :many
+SELECT
+    ev.id,
+    ev.muestra_id,
+    ev.vuelo_id,
+    ev.avanza,
+    ev.created_at,
+    m.cod_anonimo,
+    es.nombre AS estilo_nombre
+FROM evaluaciones ev
+JOIN muestras m ON m.id = ev.muestra_id
+JOIN estilos es ON es.id = m.estilo_id
+WHERE ev.juez_id = $1 AND ev.vuelo_id = $2
+ORDER BY ev.created_at ASC;
+
 -- name: GetProgresoVuelosEdicion :many
 SELECT
     v.id,

@@ -5,7 +5,7 @@ import { ArrowLeft, CheckCircle2, Info } from "lucide-react";
 import {
   getVuelosJuez,
   getMuestrasVuelo,
-  getEvaluacionesJuez,
+  getEvaluacionesPorVuelo,
   type MuestraVuelo,
   type Evaluacion,
 } from "@/api/cata";
@@ -19,6 +19,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/PageHeader";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
 import EvaluacionForm from "@/components/juez/EvaluacionForm";
+import { cn } from "@/lib/utils";
 
 export default function VueloEvaluacionPage() {
   const { vuelo_id: vueloId } = useParams<{ vuelo_id: string }>();
@@ -51,9 +52,9 @@ export default function VueloEvaluacionPage() {
   });
 
   const { data: evaluaciones } = useQuery({
-    queryKey: ["evaluaciones-juez", edicionId],
-    queryFn: () => getEvaluacionesJuez(edicionId as string),
-    enabled: !!edicionId,
+    queryKey: ["evaluaciones-vuelo", vueloId],
+    queryFn: () => getEvaluacionesPorVuelo(vueloId as string),
+    enabled: !!vueloId,
   });
 
   const isLoading = edicionLoading || (!!edicionId && muestrasLoading);
@@ -164,7 +165,16 @@ export default function VueloEvaluacionPage() {
               {muestrasOrdenadas.map((muestra) => {
                 const completada = esEvaluada(muestra);
                 return (
-                  <TabsTab key={muestra.id} value={muestra.id}>
+                  <TabsTab
+                    key={muestra.id}
+                    value={muestra.id}
+                    className={cn(
+                      "border",
+                      completada
+                        ? "border-success-300 bg-success-100 text-success-700"
+                        : "border-warning-300 bg-warning-100 text-warning-700"
+                    )}
+                  >
                     {completada && (
                       <CheckCircle2
                         className="size-3.5 text-success-600"
@@ -185,6 +195,8 @@ export default function VueloEvaluacionPage() {
                     muestra={muestra}
                     juezEmail={me?.email}
                     onSuccess={() => handleEvaluacionSuccess(muestra.id)}
+                    readOnly={esEvaluada(muestra)}
+                    evaluacionId={evaluacionPorMuestra.get(muestra.id)?.id}
                   />
                 )}
               </TabsPanel>
