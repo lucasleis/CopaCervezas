@@ -147,7 +147,7 @@ export default function VueloEvaluacionPage() {
           <p className="text-sm text-neutral-500">
             Evaluaste todas las muestras de este vuelo.
           </p>
-          <Button onClick={() => navigate("/cata")}>
+          <Button onClick={() => navigate("/cata", { state: { edicionId } })}>
             <ArrowLeft className="size-4" aria-hidden="true" />
             Volver a mis vuelos
           </Button>

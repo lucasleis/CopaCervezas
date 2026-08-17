@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getVuelosJuez, type VueloJuez, type EstadoVuelo } from "@/api/cata";
 import { getMe } from "@/api/auth";
@@ -39,6 +39,7 @@ const ESTADO_VUELO_LABEL: Record<EstadoVuelo, string> = {
 
 export default function CataPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
 
   const { data: me } = useQuery({ queryKey: ["me"], queryFn: getMe });
@@ -48,7 +49,9 @@ export default function CataPage() {
     isLoading: edicionesLoading,
     isError: edicionesError,
   } = useEdicionActivaJuez();
-  const [edicionSeleccionada, setEdicionSeleccionada] = useState<string | null>(null);
+  const [edicionSeleccionada, setEdicionSeleccionada] = useState<string | null>(
+    (location.state as { edicionId?: string } | null)?.edicionId ?? null
+  );
 
   // Si el juez solo tiene una edición disponible, saltamos la pantalla de
   // selección y la usamos directamente.
