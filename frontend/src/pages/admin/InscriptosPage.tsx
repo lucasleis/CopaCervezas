@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,12 @@ interface ColorDropdownProps<T extends string> {
   disabled?: boolean;
 }
 
+interface ColorDropdownPosition {
+  top: number;
+  left: number;
+  width: number;
+}
+
 function ColorDropdown<T extends string>({
   value,
   options,
@@ -49,13 +56,34 @@ function ColorDropdown<T extends string>({
   disabled,
 }: ColorDropdownProps<T>) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<ColorDropdownPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.value === value);
+
+  function handleOpen() {
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setOpen((prev) => !prev);
+  }
 
   useEffect(() => {
     if (!open) return;
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        panelRef.current &&
+        !panelRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     }
@@ -67,8 +95,9 @@ function ColorDropdown<T extends string>({
     <div className="relative inline-block" ref={containerRef}>
       <button
         type="button"
+        ref={triggerRef}
         disabled={disabled}
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleOpen}
         className={`flex items-center gap-1.5 rounded-md border border-neutral-300 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50 ${
           current?.className ?? ""
         }`}
@@ -76,23 +105,35 @@ function ColorDropdown<T extends string>({
         {current?.label}
         <ChevronDown className="h-3.5 w-3.5" />
       </button>
-      {open && (
-        <div className="absolute left-0 top-full z-10 mt-1 min-w-full overflow-hidden rounded-md border border-neutral-200 bg-white shadow-md">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => {
-                onChange(opt.value);
-                setOpen(false);
-              }}
-              className={`block w-full cursor-pointer whitespace-nowrap px-2 py-1 text-left text-sm ${opt.className} ${opt.hoverClassName}`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {open &&
+        position &&
+        createPortal(
+          <div
+            ref={panelRef}
+            style={{
+              position: "absolute",
+              top: position.top,
+              left: position.left,
+              minWidth: position.width,
+            }}
+            className="z-[9999] mt-1 overflow-hidden rounded-md border border-neutral-200 bg-white shadow-md"
+          >
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={`block w-full cursor-pointer whitespace-nowrap px-2 py-1 text-left text-sm ${opt.className} ${opt.hoverClassName}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
