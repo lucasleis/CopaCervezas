@@ -629,7 +629,10 @@ func (s *Service) ListMuestrasSinGrupo(ctx context.Context, edicionID, orgID uui
 	return result, nil
 }
 
-func (s *Service) ListMuestrasByGrupo(ctx context.Context, grupoID, edicionID uuid.UUID) ([]db.ListMuestrasByGrupoRow, error) {
+func (s *Service) ListMuestrasByGrupo(ctx context.Context, grupoID, edicionID, orgID uuid.UUID) ([]db.ListMuestrasByGrupoRow, error) {
+	if err := s.verifyEdicionOwnership(ctx, edicionID, orgID); err != nil {
+		return nil, fmt.Errorf("competition: list muestras by grupo: %w", err)
+	}
 	if _, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: grupoID, EdicionID: edicionID}); err != nil {
 		return nil, fmt.Errorf("competition: list muestras by grupo: %w", err)
 	}
