@@ -360,9 +360,23 @@ func (h *Handler) LiveCata(c echo.Context) error {
 	if !requireAdmin(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
 	}
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
+		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
+	}
 	edicionID, err := parseUUID(c, "id")
 	if err != nil {
 		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de edición inválido")
+	}
+	// Verificar ownership ANTES del upgrade: permite rechazar con HTTP normal
+	// (404 en vez de 101 seguido de cierre), igual que GetProgresoVuelosEdicion
+	// y GetIncongruenciasVuelo.
+	if err := h.svc.VerificarEdicionOwnership(c.Request().Context(), edicionID, orgID); err != nil {
+		if errors.Is(err, ErrEdicionNotFound) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
+		}
+		slog.Error("live cata: verify edicion ownership failed", "error", err, "edicion_id", edicionID)
+		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al verificar la edición")
 	}
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

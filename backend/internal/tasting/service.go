@@ -298,6 +298,14 @@ func (s *Service) verifyEdicionOwnership(ctx context.Context, edicionID, orgID u
 	return nil
 }
 
+// VerificarEdicionOwnership expone la verificación de pertenencia de edición a
+// org para casos donde el handler no puede delegar en un método que retorne
+// datos (e.g. LiveCata, que hace el upgrade a WebSocket antes de invocar al
+// servicio con datos concretos).
+func (s *Service) VerificarEdicionOwnership(ctx context.Context, edicionID, orgID uuid.UUID) error {
+	return s.verifyEdicionOwnership(ctx, edicionID, orgID)
+}
+
 func (s *Service) verifyAsignacion(ctx context.Context, usuarioID, vueloID uuid.UUID) error {
 	_, err := s.getAsignacion(ctx, usuarioID, vueloID)
 	return err
