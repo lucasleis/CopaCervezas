@@ -25,6 +25,7 @@ SELECT
     m.info_adicional,
     e.codigo AS estilo_codigo,
     e.nombre AS estilo_nombre,
+    e.campos_info_adicional AS estilo_campos_info_adicional,
     vm.orden
 FROM vuelo_muestras vm
 JOIN muestras m ON m.id = vm.muestra_id

@@ -11,6 +11,7 @@ import (
 	gorillaws "github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/lucasleis/nivalis/internal/db"
+	"github.com/lucasleis/nivalis/internal/styles"
 	"github.com/lucasleis/nivalis/pkg/websocket"
 )
 
@@ -132,7 +133,13 @@ func toMuestraVueloResponse(m db.GetMuestrasVueloRow) muestraVueloResponse {
 		r.CodAnonimo = &m.CodAnonimo.String
 	}
 	if m.InfoAdicional.Valid {
-		r.InfoAdicional = m.InfoAdicional.RawMessage
+		var camposSchema json.RawMessage
+		if m.EstiloCamposInfoAdicional.Valid {
+			camposSchema = m.EstiloCamposInfoAdicional.RawMessage
+		}
+		// Sin schema (camposSchema nil), el helper aplica la misma lista blanca:
+		// nada marcado visible_jueces:true, nada se expone.
+		r.InfoAdicional = styles.FiltrarInfoAdicionalJueces(m.InfoAdicional.RawMessage, camposSchema)
 	}
 	return r
 }

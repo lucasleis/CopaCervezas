@@ -59,6 +59,58 @@ type CampoDef struct {
 	VisibleJueces bool   `json:"visible_jueces"`
 }
 
+// FiltrarInfoAdicionalJueces proyecta info_adicional quedándose solo con las
+// claves que el schema del estilo (campos_info_adicional) marca explícitamente
+// visible_jueces:true. Es lista blanca: una clave sin entrada en el schema, o
+// con visible_jueces ausente o en false, nunca se incluye en el resultado —
+// el olvido de marcar un campo nuevo lo esconde, en vez de filtrarlo en silencio.
+// Lo mismo aplica si el estilo no tiene schema definido: sin schema no hay
+// nada marcado visible, así que no se expone nada.
+//
+// Devuelve nil solo cuando infoAdicional viene vacío (la muestra no tiene
+// información adicional) o no puede parsearse. Si infoAdicional trae datos
+// pero el filtro los saca a todos —schema vacío, sin coincidencias, o
+// campos_info_adicional inconsistente— devuelve un objeto JSON vacío ({}),
+// no nil: el frontend del juez hace Object.entries(muestra.info_adicional)
+// para listar los campos, y necesita distinguir "no hay info_adicional" (null)
+// de "hay info_adicional pero nada de lo que trae es para vos" ({}).
+//
+// Reusable desde cualquier paquete que sirva info_adicional a un juez (hoy
+// tasting, y LLE-27 — devoluciones — más adelante).
+func FiltrarInfoAdicionalJueces(infoAdicional, camposSchema json.RawMessage) json.RawMessage {
+	if len(infoAdicional) == 0 {
+		return nil
+	}
+
+	var valores map[string]json.RawMessage
+	if err := json.Unmarshal(infoAdicional, &valores); err != nil {
+		return nil
+	}
+
+	var campos []CampoDef
+	if len(camposSchema) > 0 {
+		if err := json.Unmarshal(camposSchema, &campos); err != nil {
+			campos = nil // schema inconsistente: lista blanca vacía, no falla en silencio hacia "mostrar todo"
+		}
+	}
+
+	filtrado := make(map[string]json.RawMessage)
+	for _, campo := range campos {
+		if !campo.VisibleJueces {
+			continue
+		}
+		if val, ok := valores[campo.Clave]; ok {
+			filtrado[campo.Clave] = val
+		}
+	}
+
+	out, err := json.Marshal(filtrado)
+	if err != nil {
+		return nil
+	}
+	return out
+}
+
 type CreateEstiloRequest struct {
 	Codigo                string     `json:"codigo"`
 	Nombre                string     `json:"nombre"`
