@@ -1045,7 +1045,8 @@ func (h *Handler) ListMuestrasByGrupo(c echo.Context) error {
 	if !requireAdmin(c) {
 		return fail(c, http.StatusForbidden, "FORBIDDEN", "Se requiere rol admin")
 	}
-	if _, ok := orgIDFromCtx(c); !ok {
+	orgID, ok := orgIDFromCtx(c)
+	if !ok {
 		return fail(c, http.StatusUnauthorized, "UNAUTHORIZED", "No autenticado")
 	}
 	edicionID, err := parseUUID(c, "id")
@@ -1056,12 +1057,12 @@ func (h *Handler) ListMuestrasByGrupo(c echo.Context) error {
 	if err != nil {
 		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "ID de grupo inválido")
 	}
-	muestras, err := h.svc.ListMuestrasByGrupo(c.Request().Context(), grupoID, edicionID)
+	muestras, err := h.svc.ListMuestrasByGrupo(c.Request().Context(), grupoID, edicionID, orgID)
 	if err != nil {
 		if isNotFound(err) {
-			return fail(c, http.StatusNotFound, "GRUPO_NOT_FOUND", "El grupo solicitado no existe")
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
-		slog.Error("list muestras by grupo failed", "error", err, "grupo_id", grupoID)
+		slog.Error("list muestras by grupo failed", "error", err, "grupo_id", grupoID, "edicion_id", edicionID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al listar las muestras del grupo")
 	}
 	result := make([]muestraGrupoResponse, len(muestras))
