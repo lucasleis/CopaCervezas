@@ -38,6 +38,19 @@ SELECT * FROM evaluaciones
 WHERE juez_id = $1 AND muestra_id = $2 AND vuelo_id = $3
 LIMIT 1;
 
+-- name: GetMuestraVueloEdicion :one
+-- Verifica que muestra_id pertenezca a vuelo_muestras del vuelo_id, y de paso
+-- resuelve el edicion_id real del vuelo (vía grupos) — sin ese round-trip
+-- extra, el edicion_id nunca debería salir de un valor que vino del cliente.
+-- sql.ErrNoRows acá significa "la muestra no es de ese vuelo", no "el vuelo
+-- no existe" (eso ya lo filtra GetAsignacionJuezVuelo antes de llegar acá).
+SELECT g.edicion_id
+FROM vuelo_muestras vm
+JOIN vuelos v ON v.id = vm.vuelo_id
+JOIN grupos g ON g.id = v.grupo_id
+WHERE vm.vuelo_id = $1 AND vm.muestra_id = $2
+LIMIT 1;
+
 -- name: CreateEvaluacion :one
 INSERT INTO evaluaciones (id, juez_id, muestra_id, vuelo_id, puntajes, comentarios, comentario_final, avanza)
 VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)

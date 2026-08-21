@@ -18,6 +18,11 @@ var ErrSinAsignacion = errors.New("tasting: el juez no tiene asignación para es
 // ErrEvaluacionDuplicada se retorna cuando ya existe una evaluación para (juez, muestra, vuelo).
 var ErrEvaluacionDuplicada = errors.New("tasting: ya existe una evaluación para esta muestra en este vuelo")
 
+// ErrMuestraNoPerteneceAlVuelo se retorna cuando muestra_id no está en vuelo_muestras
+// para el vuelo_id indicado. Distinto de ErrSinAsignacion: acá el juez SÍ está
+// asignado al vuelo, lo inválido es la muestra que mandó en el body.
+var ErrMuestraNoPerteneceAlVuelo = errors.New("tasting: la muestra no pertenece a este vuelo")
+
 // ErrComentarioFinalRequerido se retorna cuando avanza no es null y comentario_final está vacío.
 var ErrComentarioFinalRequerido = errors.New("tasting: comentario_final es requerido para evaluaciones finales")
 
@@ -63,10 +68,30 @@ func (s *Service) GetMuestrasVuelo(ctx context.Context, usuarioID, vueloID uuid.
 	return result, nil
 }
 
-func (s *Service) CreateEvaluacion(ctx context.Context, juezID uuid.UUID, req CreateEvaluacionRequest) (db.Evaluacione, bool, error) {
+// CreateEvaluacion crea la evaluación del juez sobre una muestra de un vuelo.
+// edicionID es el valor del path — se usa exclusivamente como chequeo de
+// coherencia contra el edicion_id real del vuelo (derivado en la misma query
+// que valida la membresía de la muestra), nunca como fuente de verdad: el
+// edicion_id que se devuelve para el broadcast es siempre el derivado, no el
+// que vino del cliente.
+func (s *Service) CreateEvaluacion(ctx context.Context, juezID, edicionID uuid.UUID, req CreateEvaluacionRequest) (db.Evaluacione, uuid.UUID, bool, error) {
 	asignacion, err := s.getAsignacion(ctx, juezID, req.VueloID)
 	if err != nil {
-		return db.Evaluacione{}, false, err
+		return db.Evaluacione{}, uuid.UUID{}, false, err
+	}
+
+	edicionReal, err := s.queries.GetMuestraVueloEdicion(ctx, db.GetMuestraVueloEdicionParams{
+		VueloID:   req.VueloID,
+		MuestraID: req.MuestraID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return db.Evaluacione{}, uuid.UUID{}, false, ErrMuestraNoPerteneceAlVuelo
+		}
+		return db.Evaluacione{}, uuid.UUID{}, false, fmt.Errorf("tasting: create evaluacion: get muestra vuelo edicion: %w", err)
+	}
+	if edicionReal != edicionID {
+		return db.Evaluacione{}, uuid.UUID{}, false, ErrEdicionNotFound
 	}
 
 	if _, err := s.queries.GetEvaluacionJuez(ctx, db.GetEvaluacionJuezParams{
@@ -74,13 +99,13 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID uuid.UUID, req Cr
 		MuestraID: req.MuestraID,
 		VueloID:   req.VueloID,
 	}); err == nil {
-		return db.Evaluacione{}, false, ErrEvaluacionDuplicada
+		return db.Evaluacione{}, uuid.UUID{}, false, ErrEvaluacionDuplicada
 	} else if !errors.Is(err, sql.ErrNoRows) {
-		return db.Evaluacione{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
+		return db.Evaluacione{}, uuid.UUID{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
 	}
 
 	if req.Avanza != nil && (req.ComentarioFinal == nil || *req.ComentarioFinal == "") {
-		return db.Evaluacione{}, false, ErrComentarioFinalRequerido
+		return db.Evaluacione{}, uuid.UUID{}, false, ErrComentarioFinalRequerido
 	}
 
 	result, err := s.queries.CreateEvaluacion(ctx, db.CreateEvaluacionParams{
@@ -94,17 +119,17 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID uuid.UUID, req Cr
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return db.Evaluacione{}, false, ErrEvaluacionDuplicada
+			return db.Evaluacione{}, uuid.UUID{}, false, ErrEvaluacionDuplicada
 		}
-		return db.Evaluacione{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
+		return db.Evaluacione{}, uuid.UUID{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
 	}
 
 	juezCompletoVuelo, err := s.actualizarProgresoAsignacion(ctx, asignacion, juezID, req.VueloID)
 	if err != nil {
-		return db.Evaluacione{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
+		return db.Evaluacione{}, uuid.UUID{}, false, fmt.Errorf("tasting: create evaluacion: %w", err)
 	}
 
-	return result, juezCompletoVuelo, nil
+	return result, edicionReal, juezCompletoVuelo, nil
 }
 
 // GetEvaluacionDetalle devuelve el detalle completo de una evaluación propia del juez.

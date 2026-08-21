@@ -296,10 +296,16 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
 	}
-	evaluacion, juezCompletoVuelo, err := h.svc.CreateEvaluacion(c.Request().Context(), usuarioID, req)
+	evaluacion, edicionReal, juezCompletoVuelo, err := h.svc.CreateEvaluacion(c.Request().Context(), usuarioID, edicionID, req)
 	if err != nil {
 		if errors.Is(err, ErrSinAsignacion) {
 			return fail(c, http.StatusForbidden, "SIN_ASIGNACION", "El juez no tiene asignación para este vuelo")
+		}
+		if errors.Is(err, ErrMuestraNoPerteneceAlVuelo) {
+			return fail(c, http.StatusUnprocessableEntity, "MUESTRA_NO_PERTENECE_AL_VUELO", "La muestra indicada no pertenece a este vuelo")
+		}
+		if errors.Is(err, ErrEdicionNotFound) {
+			return fail(c, http.StatusNotFound, "EDICION_NOT_FOUND", "La edición solicitada no existe")
 		}
 		if errors.Is(err, ErrEvaluacionDuplicada) {
 			return fail(c, http.StatusConflict, "EVALUACION_DUPLICADA", "Ya existe una evaluación para esta muestra en este vuelo")
@@ -310,7 +316,9 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 		slog.Error("create evaluacion failed", "error", err)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear la evaluación")
 	}
-	h.broadcastEvaluacionCompletada(edicionID, evaluacion, juezCompletoVuelo)
+	// edicionReal viene del vuelo (derivado en el servicio), nunca del path —
+	// el broadcast no puede depender de un valor que vino del cliente.
+	h.broadcastEvaluacionCompletada(edicionReal, evaluacion, juezCompletoVuelo)
 	return respond(c, http.StatusCreated, evaluacionCreatedResponse{ID: evaluacion.ID.String()})
 }
 
