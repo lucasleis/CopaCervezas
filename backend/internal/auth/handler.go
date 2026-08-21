@@ -22,13 +22,15 @@ type Handler struct {
 	queries         *db.Queries
 	emailSender     email.Sender
 	frontendBaseURL string
+	jwtSecret       string
 }
 
-func NewHandler(queries *db.Queries, emailSender email.Sender, frontendBaseURL string) *Handler {
+func NewHandler(queries *db.Queries, emailSender email.Sender, frontendBaseURL, jwtSecret string) *Handler {
 	return &Handler{
 		queries:         queries,
 		emailSender:     emailSender,
 		frontendBaseURL: frontendBaseURL,
+		jwtSecret:       jwtSecret,
 	}
 }
 
@@ -88,7 +90,7 @@ func hashToken(raw string) string {
 }
 
 func (h *Handler) issueTokens(c echo.Context, usuarioID, orgID uuid.UUID, rol string, email string) (*loginResponse, error) {
-	jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecret := h.jwtSecret
 	jwtExpiry := os.Getenv("JWT_EXPIRY")
 	if jwtExpiry == "" {
 		jwtExpiry = "15m"

@@ -32,6 +32,18 @@ func main() {
 		slog.Error("DATABASE_URL is required")
 		os.Exit(1)
 	}
+
+	// JWT_SECRET se lee y valida una sola vez acá, nunca en caliente por
+	// request: ausente o demasiado corto, el server no arranca. Sin esta
+	// validación, una variable vacía degrada en silencio a firmar y validar
+	// tokens con clave "" — cualquiera forja un HS256 con esa clave y entra
+	// como admin de cualquier org.
+	const jwtSecretMinLen = 32 // 256 bits, mínimo razonable para HMAC-SHA256
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if len(jwtSecret) < jwtSecretMinLen {
+		slog.Error("JWT_SECRET is required and must be at least 32 characters long")
+		os.Exit(1)
+	}
 	sqlDB, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		slog.Error("failed to open DB", "error", err)
@@ -91,7 +103,7 @@ func main() {
 	if frontendBaseURL == "" {
 		frontendBaseURL = "http://localhost:5173"
 	}
-	authHandler := auth.NewHandler(queries, emailSender, frontendBaseURL)
+	authHandler := auth.NewHandler(queries, emailSender, frontendBaseURL, jwtSecret)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
@@ -106,7 +118,7 @@ func main() {
 	e.POST("/auth/set-password", authHandler.SetPassword)
 
 	protected := e.Group("")
-	protected.Use(custommiddleware.JWTMiddleware)
+	protected.Use(custommiddleware.NewJWTMiddleware(jwtSecret))
 	protected.GET("/auth/me", authHandler.Me)
 	protected.POST("/auth/select-org", authHandler.SelectOrg)
 	protected.GET("/api/v1/estilos/catalogo", stylesHandler.ListCatalogoAuthenticated)
@@ -136,7 +148,10 @@ func main() {
 	admin.GET("/ediciones/:id/cata/progreso", tastingHandler.GetProgresoVuelosEdicion)
 	admin.GET("/ediciones/:id/cata/incongruencias", tastingHandler.GetIncongruenciasVuelo)
 	admin.PATCH("/ediciones/:id/evaluaciones/:evaluacion_id", tastingHandler.UpdateEvaluacionAdmin)
-	admin.GET("/ediciones/:id/cata/live", tastingHandler.LiveCata)
+	// LiveCata es WebSocket: se registra fuera de "protected" porque necesita
+	// la variante de JWT middleware que acepta el token por query string. El
+	// resto de las rutas admin exige el header Authorization estricto.
+	e.GET("/api/v1/admin/ediciones/:id/cata/live", tastingHandler.LiveCata, custommiddleware.NewJWTMiddlewareWS(jwtSecret))
 
 	admin.GET("/estilos", stylesHandler.List)
 	admin.GET("/estilos/catalogo", stylesHandler.ListCatalogo)
