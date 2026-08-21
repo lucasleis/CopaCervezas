@@ -16,10 +16,12 @@ func NewLogSender() *LogSender {
 }
 
 func (s *LogSender) Send(ctx context.Context, msg Message) error {
+	// NO loguear msg.HTML: el cuerpo lleva en texto plano el link con el token
+	// de un solo uso (verificación de email, invitación, recuperación de
+	// contraseña) — quien lea los logs se apropiaría de la cuenta.
 	slog.Info("email: send (log sender, no envío real)",
 		"to", msg.To,
 		"subject", msg.Subject,
-		"html", msg.HTML,
 	)
 	return nil
 }
