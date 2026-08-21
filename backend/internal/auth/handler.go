@@ -250,9 +250,18 @@ func (h *Handler) SelectOrg(c echo.Context) error {
 }
 
 func (h *Handler) Me(c echo.Context) error {
-	usuarioID := c.Get("usuario_id").(uuid.UUID)
-	email := c.Get("email").(string)
-	rol := c.Get("rol").(string)
+	usuarioID, ok := c.Get("usuario_id").(uuid.UUID)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "no autenticado")
+	}
+	email, ok := c.Get("email").(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "no autenticado")
+	}
+	rol, ok := c.Get("rol").(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "no autenticado")
+	}
 
 	return c.JSON(http.StatusOK, meResponse{
 		ID:    usuarioID.String(),

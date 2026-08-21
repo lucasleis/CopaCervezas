@@ -67,13 +67,16 @@ func main() {
 		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAuthorization},
 		AllowCredentials: true,
 	}))
+	e.Use(middleware.Recover())
 
 	competitionSvc := competition.NewService(queries, sqlDB)
 	competitionHandler := competition.NewHandler(competitionSvc)
 	tastingSvc := tasting.NewService(queries)
 	hub := websocket.NewHub()
 	go hub.Run()
-	tastingHandler := tasting.NewHandler(tastingSvc, hub)
+	// El CheckOrigin del WebSocket reusa allowedOrigin: mismo origen que CORS,
+	// no una lista separada que hay que mantener sincronizada.
+	tastingHandler := tasting.NewHandler(tastingSvc, hub, allowedOrigin)
 	stylesSvc := styles.NewService(queries)
 	stylesHandler := styles.NewHandler(stylesSvc)
 	inscriptionSvc := inscription.NewService(queries)

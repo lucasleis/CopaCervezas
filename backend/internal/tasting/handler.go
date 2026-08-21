@@ -16,20 +16,20 @@ import (
 )
 
 type Handler struct {
-	svc *Service
-	hub *websocket.Hub
+	svc           *Service
+	hub           *websocket.Hub
+	allowedOrigin string
 }
 
-func NewHandler(svc *Service, hub *websocket.Hub) *Handler {
-	return &Handler{svc: svc, hub: hub}
+func NewHandler(svc *Service, hub *websocket.Hub, allowedOrigin string) *Handler {
+	return &Handler{svc: svc, hub: hub, allowedOrigin: allowedOrigin}
 }
 
-var upgrader = gorillaws.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+// checkOrigin restringe el handshake de WebSocket al mismo origen que CORS
+// permite para el resto del server (main.go) — reusa esa config, no duplica
+// la lista de orígenes permitidos.
+func (h *Handler) checkOrigin(r *http.Request) bool {
+	return r.Header.Get("Origin") == h.allowedOrigin
 }
 
 type evaluacionCompletadaEvent struct {
@@ -392,6 +392,11 @@ func (h *Handler) LiveCata(c echo.Context) error {
 		}
 		slog.Error("live cata: verify edicion ownership failed", "error", err, "edicion_id", edicionID)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al verificar la edición")
+	}
+	upgrader := gorillaws.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin:     h.checkOrigin,
 	}
 	conn, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
