@@ -316,10 +316,10 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 		slog.Error("create evaluacion failed", "error", err)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear la evaluación")
 	}
-	// edición y org vienen del vuelo (derivadas en el servicio), nunca del path
+	// org y edición vienen del vuelo (derivadas en el servicio), nunca del path
 	// ni del JWT — el broadcast no puede depender de un valor afirmado por el
-	// cliente. La org todavía no se usa para rutear: la consume el hub en el
-	// commit siguiente, cuando la clave de room pasa a ser (org, edicion).
+	// cliente. El broadcast no bloquea: si el hub está caído, la evaluación ya
+	// quedó persistida y el juez recibe su 201 igual.
 	h.broadcastEvaluacionCompletada(creada)
 	return respond(c, http.StatusCreated, evaluacionCreatedResponse{ID: creada.Evaluacion.ID.String()})
 }
@@ -368,7 +368,7 @@ func (h *Handler) broadcastEvaluacionCompletada(creada EvaluacionCreada) {
 		slog.Error("marshal evaluacion completada event failed", "error", err)
 		return
 	}
-	h.hub.Broadcast <- websocket.Message{EdicionID: creada.EdicionID, Payload: payload}
+	h.hub.Broadcast(creada.OrgID, creada.EdicionID, payload)
 }
 
 // LiveCata hace upgrade de la conexión a WebSocket y suscribe al admin a los eventos
@@ -405,12 +405,9 @@ func (h *Handler) LiveCata(c echo.Context) error {
 		slog.Error("websocket upgrade failed", "error", err, "edicion_id", edicionID)
 		return err
 	}
-	client := &websocket.Client{
-		EdicionID: edicionID,
-		Conn:      conn,
-		Send:      make(chan []byte, 16),
-	}
-	h.hub.ServeClient(client)
+	// Acá el org_id sí sale del JWT: este es el punto de registro, y es la org
+	// del admin que se suscribe. Ya quedó verificada contra la edición arriba.
+	h.hub.ServeClient(websocket.NewClient(orgID, edicionID, conn))
 	return nil
 }
 
