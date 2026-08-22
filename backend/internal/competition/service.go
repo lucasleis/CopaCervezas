@@ -582,7 +582,18 @@ func (s *Service) MoverMuestra(ctx context.Context, muestraID, grupoID, edicionI
 		return fmt.Errorf("competition: mover muestra: %w", err)
 	}
 
-	if _, err := s.queries.AsignarGrupoMuestra(ctx, db.AsignarGrupoMuestraParams{
+	// El movimiento y los dos recálculos van juntos: cant_rondas es el input del
+	// armado de vuelos, así que dejar el del grupo de origen desactualizado
+	// propaga la inconsistencia más allá de esta operación.
+	tx, err := s.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck // rollback es no-op si el commit ya se ejecutó
+
+	q := s.queries.WithTx(tx)
+
+	if _, err := q.AsignarGrupoMuestra(ctx, db.AsignarGrupoMuestraParams{
 		ID:               muestraID,
 		GrupoID:          uuid.NullUUID{UUID: grupoID, Valid: true},
 		AsignacionManual: true,
@@ -590,25 +601,31 @@ func (s *Service) MoverMuestra(ctx context.Context, muestraID, grupoID, edicionI
 		return fmt.Errorf("competition: mover muestra: %w", err)
 	}
 
-	if err := s.recalcularCantRondas(ctx, grupoID, edicionID); err != nil {
+	if err := s.recalcularCantRondas(ctx, q, grupoID, edicionID); err != nil {
 		return fmt.Errorf("competition: mover muestra: %w", err)
 	}
 
 	if muestra.GrupoID.Valid && muestra.GrupoID.UUID != grupoID {
-		if err := s.recalcularCantRondas(ctx, muestra.GrupoID.UUID, edicionID); err != nil {
+		if err := s.recalcularCantRondas(ctx, q, muestra.GrupoID.UUID, edicionID); err != nil {
 			return fmt.Errorf("competition: mover muestra: %w", err)
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("competition: mover muestra: %w", err)
 	}
 
 	return nil
 }
 
-func (s *Service) recalcularCantRondas(ctx context.Context, grupoID, edicionID uuid.UUID) error {
-	grupo, err := s.queries.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: grupoID, EdicionID: edicionID})
+// q permite correr el recálculo dentro de una transacción; es importante que la
+// lectura de cant_muestras vea las escrituras previas de la misma tx.
+func (s *Service) recalcularCantRondas(ctx context.Context, q *db.Queries, grupoID, edicionID uuid.UUID) error {
+	grupo, err := q.GetGrupoByIDEdicion(ctx, db.GetGrupoByIDEdicionParams{ID: grupoID, EdicionID: edicionID})
 	if err != nil {
 		return err
 	}
-	_, err = s.queries.UpdateGrupoCantRondas(ctx, db.UpdateGrupoCantRondasParams{
+	_, err = q.UpdateGrupoCantRondas(ctx, db.UpdateGrupoCantRondasParams{
 		ID:         grupoID,
 		CantRondas: calcularCantRondas(grupo.CantMuestras),
 	})

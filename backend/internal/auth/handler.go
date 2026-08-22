@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -20,14 +21,16 @@ import (
 
 type Handler struct {
 	queries         *db.Queries
+	sqlDB           *sql.DB
 	emailSender     email.Sender
 	frontendBaseURL string
 	jwtSecret       string
 }
 
-func NewHandler(queries *db.Queries, emailSender email.Sender, frontendBaseURL, jwtSecret string) *Handler {
+func NewHandler(queries *db.Queries, sqlDB *sql.DB, emailSender email.Sender, frontendBaseURL, jwtSecret string) *Handler {
 	return &Handler{
 		queries:         queries,
+		sqlDB:           sqlDB,
 		emailSender:     emailSender,
 		frontendBaseURL: frontendBaseURL,
 		jwtSecret:       jwtSecret,
@@ -400,8 +403,10 @@ func generarTokenUsoUnico() (plain string, hash string, err error) {
 // crearYEnviarToken crea un token_uso_unico en la DB y envía el mail
 // correspondiente. Antes de crear el token nuevo, revoca los tokens
 // anteriores del mismo tipo para ese usuario.
-func (h *Handler) crearYEnviarToken(ctx context.Context, usuarioID uuid.UUID, tipo db.TokenTipoEnum, destinatario, nombre, baseURL string) error {
-	if err := h.queries.RevocarTokensUsuario(ctx, db.RevocarTokensUsuarioParams{
+// q permite correr las escrituras dentro de una transacción; los callers que no
+// necesitan una pasan h.queries.
+func (h *Handler) crearYEnviarToken(ctx context.Context, q *db.Queries, usuarioID uuid.UUID, tipo db.TokenTipoEnum, destinatario, nombre, baseURL string) error {
+	if err := q.RevocarTokensUsuario(ctx, db.RevocarTokensUsuarioParams{
 		UsuarioID: usuarioID,
 		Tipo:      tipo,
 	}); err != nil {
@@ -439,7 +444,7 @@ func (h *Handler) crearYEnviarToken(ctx context.Context, usuarioID uuid.UUID, ti
 		return err
 	}
 
-	if _, err := h.queries.CrearTokenUsoUnico(ctx, db.CrearTokenUsoUnicoParams{
+	if _, err := q.CrearTokenUsoUnico(ctx, db.CrearTokenUsoUnicoParams{
 		UsuarioID: usuarioID,
 		Tipo:      tipo,
 		TokenHash: hashed,
@@ -499,7 +504,7 @@ func (h *Handler) Register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
-	if err := h.crearYEnviarToken(ctx, usuario.ID, db.TokenTipoEnumVerificacionEmail, usuario.Email, req.Nombre, h.frontendBaseURL); err != nil {
+	if err := h.crearYEnviarToken(ctx, h.queries, usuario.ID, db.TokenTipoEnumVerificacionEmail, usuario.Email, req.Nombre, h.frontendBaseURL); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
@@ -567,7 +572,7 @@ func (h *Handler) ForgotPassword(c echo.Context) error {
 	}
 
 	nombre := usuario.Nombre.String
-	if err := h.crearYEnviarToken(ctx, usuario.ID, db.TokenTipoEnumRecuperacionPassword, usuario.Email, nombre, h.frontendBaseURL); err != nil {
+	if err := h.crearYEnviarToken(ctx, h.queries, usuario.ID, db.TokenTipoEnumRecuperacionPassword, usuario.Email, nombre, h.frontendBaseURL); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
@@ -653,25 +658,56 @@ func (h *Handler) InvitarUsuario(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
-	usuario, err := h.queries.CrearUsuario(ctx, db.CrearUsuarioParams{
+	// Alta transaccional: usuario + membresía + token de invitación.
+	//
+	// El envío del mail va DENTRO de la transacción, antes del commit, aunque sea
+	// I/O externo y no pueda revertirse. Es deliberado: si el envío falla y la
+	// creación quedara persistida, el usuario queda con password_hash
+	// "INVITACION_PENDIENTE" y sin link, el admin no puede reintentar (choca con
+	// EMAIL_EN_USO más arriba) y no hay endpoint para reenviar la invitación ni
+	// para borrar usuarios — el email queda quemado hasta que alguien toque la
+	// DB a mano. Revirtiendo, el peor caso es un link muerto si el mail llegó a
+	// salir pero el commit falló, y de ahí se sale reintentando la invitación.
+	//
+	// El costo es tener la transacción abierta durante la latencia del proveedor
+	// de mail. Es aceptable para una acción de admin de baja frecuencia; si
+	// InvitarUsuario pasara a usarse en lote, esto hay que revisarlo.
+	tx, err := h.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		slog.Error("invitar usuario: begin tx", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
+	}
+	defer tx.Rollback() //nolint:errcheck // rollback es no-op si el commit ya se ejecutó
+
+	q := h.queries.WithTx(tx)
+
+	usuario, err := q.CrearUsuario(ctx, db.CrearUsuarioParams{
 		Email:        req.Email,
 		PasswordHash: "INVITACION_PENDIENTE",
 		Nombre:       sql.NullString{String: req.Nombre, Valid: true},
 		Apellido:     sql.NullString{String: req.Apellido, Valid: true},
 	})
 	if err != nil {
+		slog.Error("invitar usuario: crear usuario", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
-	if err := h.queries.CrearUsuarioOrganizacion(ctx, db.CrearUsuarioOrganizacionParams{
+	if err := q.CrearUsuarioOrganizacion(ctx, db.CrearUsuarioOrganizacionParams{
 		UsuarioID: usuario.ID,
 		OrgID:     orgID,
 		Rol:       db.RolEnumJudge,
 	}); err != nil {
+		slog.Error("invitar usuario: crear usuario organizacion", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 
-	if err := h.crearYEnviarToken(ctx, usuario.ID, db.TokenTipoEnumInvitacion, usuario.Email, req.Nombre, h.frontendBaseURL); err != nil {
+	if err := h.crearYEnviarToken(ctx, q, usuario.ID, db.TokenTipoEnumInvitacion, usuario.Email, req.Nombre, h.frontendBaseURL); err != nil {
+		slog.Error("invitar usuario: crear y enviar token", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
+	}
+
+	if err := tx.Commit(); err != nil {
+		slog.Error("invitar usuario: commit", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error interno")
 	}
 

@@ -43,10 +43,11 @@ type CreateEvaluacionRequest struct {
 
 type Service struct {
 	queries *db.Queries
+	sqlDB   *sql.DB
 }
 
-func NewService(queries *db.Queries) *Service {
-	return &Service{queries: queries}
+func NewService(queries *db.Queries, sqlDB *sql.DB) *Service {
+	return &Service{queries: queries, sqlDB: sqlDB}
 }
 
 func (s *Service) GetVuelosJuez(ctx context.Context, usuarioID, edicionID uuid.UUID) ([]db.GetVuelosJuezRow, error) {
@@ -86,12 +87,28 @@ type EvaluacionCreada struct {
 // edicion_id y el org_id que se devuelven para el broadcast son siempre los
 // derivados, no los que vinieron del cliente ni los afirmados por el JWT.
 func (s *Service) CreateEvaluacion(ctx context.Context, juezID, edicionID uuid.UUID, req CreateEvaluacionRequest) (EvaluacionCreada, error) {
-	asignacion, err := s.getAsignacion(ctx, juezID, req.VueloID)
+	// El INSERT de la evaluación y el UPDATE del estado de la asignación van en
+	// la misma transacción. Sueltos, un fallo del update dejaba la evaluación
+	// escrita y devolvía 500: el juez ve error, reintenta, y el reintento le da
+	// EVALUACION_DUPLICADA sobre algo que cree no haber guardado, con el vuelo
+	// marcado como incompleto.
+	//
+	// Las lecturas de validación también entran en la tx para que decidan sobre
+	// el mismo snapshot en que se escribe.
+	tx, err := s.sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return EvaluacionCreada{}, fmt.Errorf("tasting: create evaluacion: begin tx: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck // rollback es no-op si el commit ya se ejecutó
+
+	q := s.queries.WithTx(tx)
+
+	asignacion, err := s.getAsignacion(ctx, q, juezID, req.VueloID)
 	if err != nil {
 		return EvaluacionCreada{}, err
 	}
 
-	vuelo, err := s.queries.GetMuestraVueloEdicion(ctx, db.GetMuestraVueloEdicionParams{
+	vuelo, err := q.GetMuestraVueloEdicion(ctx, db.GetMuestraVueloEdicionParams{
 		VueloID:   req.VueloID,
 		MuestraID: req.MuestraID,
 	})
@@ -105,7 +122,7 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID, edicionID uuid.U
 		return EvaluacionCreada{}, ErrEdicionNotFound
 	}
 
-	if _, err := s.queries.GetEvaluacionJuez(ctx, db.GetEvaluacionJuezParams{
+	if _, err := q.GetEvaluacionJuez(ctx, db.GetEvaluacionJuezParams{
 		JuezID:    juezID,
 		MuestraID: req.MuestraID,
 		VueloID:   req.VueloID,
@@ -119,7 +136,7 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID, edicionID uuid.U
 		return EvaluacionCreada{}, ErrComentarioFinalRequerido
 	}
 
-	result, err := s.queries.CreateEvaluacion(ctx, db.CreateEvaluacionParams{
+	result, err := q.CreateEvaluacion(ctx, db.CreateEvaluacionParams{
 		JuezID:          juezID,
 		MuestraID:       req.MuestraID,
 		VueloID:         req.VueloID,
@@ -135,9 +152,15 @@ func (s *Service) CreateEvaluacion(ctx context.Context, juezID, edicionID uuid.U
 		return EvaluacionCreada{}, fmt.Errorf("tasting: create evaluacion: %w", err)
 	}
 
-	juezCompletoVuelo, err := s.actualizarProgresoAsignacion(ctx, asignacion, juezID, req.VueloID)
+	juezCompletoVuelo, err := s.actualizarProgresoAsignacion(ctx, q, asignacion, juezID, req.VueloID)
 	if err != nil {
 		return EvaluacionCreada{}, fmt.Errorf("tasting: create evaluacion: %w", err)
+	}
+
+	// El broadcast lo dispara el handler DESPUÉS de este commit: no puede salir
+	// un evento por WebSocket sobre una transacción que todavía puede abortar.
+	if err := tx.Commit(); err != nil {
+		return EvaluacionCreada{}, fmt.Errorf("tasting: create evaluacion: commit: %w", err)
 	}
 
 	return EvaluacionCreada{
@@ -167,16 +190,20 @@ func (s *Service) GetEvaluacionDetalle(ctx context.Context, evaluacionID, juezID
 
 // actualizarProgresoAsignacion recalcula si el juez terminó todas las muestras
 // del vuelo y actualiza asignaciones_juez.estado en consecuencia.
+// q permite correr los counts y el update dentro de la misma transacción que
+// insertó la evaluación: los counts tienen que ver ese INSERT para decidir bien
+// si el juez completó el vuelo.
 func (s *Service) actualizarProgresoAsignacion(
 	ctx context.Context,
+	q *db.Queries,
 	asignacion db.AsignacionesJuez,
 	juezID, vueloID uuid.UUID,
 ) (bool, error) {
-	totalMuestras, err := s.queries.CountMuestrasVuelo(ctx, vueloID)
+	totalMuestras, err := q.CountMuestrasVuelo(ctx, vueloID)
 	if err != nil {
 		return false, fmt.Errorf("count muestras vuelo: %w", err)
 	}
-	completadas, err := s.queries.CountEvaluacionesCompletadasJuez(ctx, db.CountEvaluacionesCompletadasJuezParams{
+	completadas, err := q.CountEvaluacionesCompletadasJuez(ctx, db.CountEvaluacionesCompletadasJuezParams{
 		JuezID:  juezID,
 		VueloID: vueloID,
 	})
@@ -195,7 +222,7 @@ func (s *Service) actualizarProgresoAsignacion(
 	}
 
 	if nuevoEstado != asignacion.Estado {
-		if err := s.queries.UpdateAsignacionJuezEstado(ctx, db.UpdateAsignacionJuezEstadoParams{
+		if err := q.UpdateAsignacionJuezEstado(ctx, db.UpdateAsignacionJuezEstadoParams{
 			UsuarioID: juezID,
 			VueloID:   vueloID,
 			Estado:    nuevoEstado,
@@ -348,12 +375,14 @@ func (s *Service) VerificarEdicionOwnership(ctx context.Context, edicionID, orgI
 }
 
 func (s *Service) verifyAsignacion(ctx context.Context, usuarioID, vueloID uuid.UUID) error {
-	_, err := s.getAsignacion(ctx, usuarioID, vueloID)
+	_, err := s.getAsignacion(ctx, s.queries, usuarioID, vueloID)
 	return err
 }
 
-func (s *Service) getAsignacion(ctx context.Context, usuarioID, vueloID uuid.UUID) (db.AsignacionesJuez, error) {
-	asignacion, err := s.queries.GetAsignacionJuezVuelo(ctx, db.GetAsignacionJuezVueloParams{
+// q permite correr la lectura dentro de una transacción; los callers que no
+// necesitan una pasan s.queries.
+func (s *Service) getAsignacion(ctx context.Context, q *db.Queries, usuarioID, vueloID uuid.UUID) (db.AsignacionesJuez, error) {
+	asignacion, err := q.GetAsignacionJuezVuelo(ctx, db.GetAsignacionJuezVueloParams{
 		UsuarioID: usuarioID,
 		VueloID:   vueloID,
 	})

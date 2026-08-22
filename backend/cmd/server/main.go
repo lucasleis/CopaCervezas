@@ -71,7 +71,7 @@ func main() {
 
 	competitionSvc := competition.NewService(queries, sqlDB)
 	competitionHandler := competition.NewHandler(competitionSvc)
-	tastingSvc := tasting.NewService(queries)
+	tastingSvc := tasting.NewService(queries, sqlDB)
 	hub := websocket.NewHub()
 	go hub.Run()
 	// El CheckOrigin del WebSocket reusa allowedOrigin: mismo origen que CORS,
@@ -106,7 +106,7 @@ func main() {
 	if frontendBaseURL == "" {
 		frontendBaseURL = "http://localhost:5173"
 	}
-	authHandler := auth.NewHandler(queries, emailSender, frontendBaseURL, jwtSecret)
+	authHandler := auth.NewHandler(queries, sqlDB, emailSender, frontendBaseURL, jwtSecret)
 
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
