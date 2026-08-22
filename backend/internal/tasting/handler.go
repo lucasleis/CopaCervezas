@@ -296,7 +296,7 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return fail(c, http.StatusBadRequest, "BAD_REQUEST", "Cuerpo de request inválido")
 	}
-	evaluacion, edicionReal, juezCompletoVuelo, err := h.svc.CreateEvaluacion(c.Request().Context(), usuarioID, edicionID, req)
+	creada, err := h.svc.CreateEvaluacion(c.Request().Context(), usuarioID, edicionID, req)
 	if err != nil {
 		if errors.Is(err, ErrSinAsignacion) {
 			return fail(c, http.StatusForbidden, "SIN_ASIGNACION", "El juez no tiene asignación para este vuelo")
@@ -316,10 +316,12 @@ func (h *Handler) CreateEvaluacion(c echo.Context) error {
 		slog.Error("create evaluacion failed", "error", err)
 		return fail(c, http.StatusInternalServerError, "INTERNAL_ERROR", "Error al crear la evaluación")
 	}
-	// edicionReal viene del vuelo (derivado en el servicio), nunca del path —
-	// el broadcast no puede depender de un valor que vino del cliente.
-	h.broadcastEvaluacionCompletada(edicionReal, evaluacion, juezCompletoVuelo)
-	return respond(c, http.StatusCreated, evaluacionCreatedResponse{ID: evaluacion.ID.String()})
+	// edición y org vienen del vuelo (derivadas en el servicio), nunca del path
+	// ni del JWT — el broadcast no puede depender de un valor afirmado por el
+	// cliente. La org todavía no se usa para rutear: la consume el hub en el
+	// commit siguiente, cuando la clave de room pasa a ser (org, edicion).
+	h.broadcastEvaluacionCompletada(creada)
+	return respond(c, http.StatusCreated, evaluacionCreatedResponse{ID: creada.Evaluacion.ID.String()})
 }
 
 // GetEvaluacionDetalle devuelve el detalle completo de una evaluación propia
@@ -347,26 +349,26 @@ func (h *Handler) GetEvaluacionDetalle(c echo.Context) error {
 	return respond(c, http.StatusOK, toEvaluacionDetalleResponse(evaluacion))
 }
 
-func (h *Handler) broadcastEvaluacionCompletada(edicionID uuid.UUID, evaluacion db.Evaluacione, juezCompletoVuelo bool) {
+func (h *Handler) broadcastEvaluacionCompletada(creada EvaluacionCreada) {
 	if h.hub == nil {
 		return
 	}
 	event := evaluacionCompletadaEvent{
 		Tipo:              "evaluacion_completada",
-		VueloID:           evaluacion.VueloID,
-		MuestraID:         evaluacion.MuestraID,
-		JuezID:            evaluacion.JuezID,
-		JuezCompletoVuelo: juezCompletoVuelo,
+		VueloID:           creada.Evaluacion.VueloID,
+		MuestraID:         creada.Evaluacion.MuestraID,
+		JuezID:            creada.Evaluacion.JuezID,
+		JuezCompletoVuelo: creada.JuezCompletoVuelo,
 	}
-	if evaluacion.Avanza.Valid {
-		event.Avanza = &evaluacion.Avanza.Bool
+	if creada.Evaluacion.Avanza.Valid {
+		event.Avanza = &creada.Evaluacion.Avanza.Bool
 	}
 	payload, err := json.Marshal(event)
 	if err != nil {
 		slog.Error("marshal evaluacion completada event failed", "error", err)
 		return
 	}
-	h.hub.Broadcast <- websocket.Message{EdicionID: edicionID, Payload: payload}
+	h.hub.Broadcast <- websocket.Message{EdicionID: creada.EdicionID, Payload: payload}
 }
 
 // LiveCata hace upgrade de la conexión a WebSocket y suscribe al admin a los eventos

@@ -40,14 +40,18 @@ LIMIT 1;
 
 -- name: GetMuestraVueloEdicion :one
 -- Verifica que muestra_id pertenezca a vuelo_muestras del vuelo_id, y de paso
--- resuelve el edicion_id real del vuelo (vía grupos) — sin ese round-trip
--- extra, el edicion_id nunca debería salir de un valor que vino del cliente.
+-- resuelve el edicion_id y el org_id reales del vuelo (vía grupos y ediciones)
+-- — sin ese round-trip extra, ninguno de los dos debería salir de un valor que
+-- vino del cliente.
+-- El org_id sale de ediciones, no de grupos: grupos no tiene org_id, la
+-- pertenencia a org la define la edición.
 -- sql.ErrNoRows acá significa "la muestra no es de ese vuelo", no "el vuelo
 -- no existe" (eso ya lo filtra GetAsignacionJuezVuelo antes de llegar acá).
-SELECT g.edicion_id
+SELECT g.edicion_id, ed.org_id
 FROM vuelo_muestras vm
 JOIN vuelos v ON v.id = vm.vuelo_id
 JOIN grupos g ON g.id = v.grupo_id
+JOIN ediciones ed ON ed.id = g.edicion_id
 WHERE vm.vuelo_id = $1 AND vm.muestra_id = $2
 LIMIT 1;
 
